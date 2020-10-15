@@ -92,6 +92,55 @@ get_file()
 	FILE=$(</tmp/lfile.dia)
 }
 
+get_file_handling()
+{
+	[ x"$tFORCE" == "x" ]	&& tFORCE="off"
+	[ x"$tDELETE" == "x" ]	&& tDELETE="off"
+	[ x"$tKEEP" == "x" ]	&& tKEEP="off"
+	dialog --backtitle "$COMMANDLINE" \
+		--title "$PROG: File Handling" \
+		--no-tags --separate-output \
+		--checklist "File Handling Options" \
+		0 0 0 \
+		--  \
+		"--force" "Force Overwrite" "$tFORCE" \
+		"--delete" "Delete Source File after work" "$tDELETE" \
+		"--keep-broken" "Keep broken output file" "$tKEEP" \
+		2>/tmp/lfilehandling.dia
+	check_error
+
+# make newline field separator
+# clear variables
+	IFS=$'\xA'
+	tFORCE=
+	tDELETE=
+	tKEEP=
+	FORCE=
+	DELETE=
+	KEEP=
+	for TMPVAR in $(</tmp/lfilehandling.dia)
+	do
+		case $TMPVAR in
+			"--force" )
+				tFORCE="on"
+				FORCE=$TMPVAR
+				;;
+			"--delete" )
+				tDELETE="on"
+				DELETE=$TMPVAR
+				;;
+			"--keep-broken" )
+				tKEEP="on"
+				KEEP=$TMPVAR
+				;;
+			* )
+				break
+				;;
+
+		esac
+	done
+}
+
 get_filter()
 {
 	dialog --backtitle "$COMMANDLINE" \
@@ -235,6 +284,9 @@ fillcommandline()
 	[ x"$FILTER" != "x" ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $FILTER")
 	[ x"$DELTA" != "x" ] 	&& COMMANDLINE=$(echo "$COMMANDLINE$DELTA")
 	[ x"$VERBOSITY" != "x" ] && COMMANDLINE=$(echo "$COMMANDLINE $VERBOSITY")
+	[ x"$FORCE" != "x" ]	&& COMMANDLINE=$(echo "$COMMANDLINE $FORCE")
+	[ x"$DELETE" != "x" ]	&& COMMANDLINE=$(echo "$COMMANDLINE $DELETE")
+	[ x"$KEEP" != "x" ]	&& COMMANDLINE=$(echo "$COMMANDLINE $KEEP")
 	[ x"$OUTDIR" != "x" ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $OUTDIR")
 	[ x"$OUTNAME" != "x" ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $OUTNANE")
 	[ x"$SUFFIX" != "x" ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $SUFFIX")
@@ -263,6 +315,9 @@ LEVEL=
 FILTER=
 DELTA=
 VERBOSITY=
+FORCE=
+DELETE=
+KEEP=
 OUTDIR=
 OUTNAME=
 SUFFIX=
@@ -306,6 +361,7 @@ if [ x$LMODE == "x" ]; then
 			"LEVEL"		"Compression Level" \
 			"FILTER"	"Pre-Compression Filter" \
 			"VERBOSITY"	"Verbose Options" \
+			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
 			"ADVANCED"	"Advanced Compression Options" \
 			"EXIT"		"Cancel" \
@@ -325,6 +381,8 @@ if [ x$LMODE == "x" ]; then
 			get_filter;
 		elif [ "$MENU" == "VERBOSITY" ] ; then
 			get_verbosity;
+		elif [ "$MENU" == "FILE HANDLING" ] ; then
+			get_file_handling;
 		elif [ "$MENU" == "OUTPUT" ] ; then
 			get_output;
 		elif [ "$MENU" == "ADVANCED" ] ; then
@@ -346,6 +404,7 @@ elif [ x"$LMODE" == "x--decompress" ] ; then
 			0 0 0 \
 			"FILE"		"File to Decompress" \
 			"VERBOSITY"	"Verbose Options" \
+			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
 			"EXIT"		"Cancel" \
 			2>/tmp/lrzip.dia
@@ -357,6 +416,8 @@ elif [ x"$LMODE" == "x--decompress" ] ; then
 			get_file;
 		elif [ "$MENU" == "VERBOSITY" ] ; then
 			get_verbosity;
+		elif [ "$MENU" == "FILE HANDLING" ] ; then
+			get_file_handling;
 		elif [ "$MENU" == "OUTPUT" ] ; then
 			get_output;
 		elif [ "$MENU" == "EXIT" ] ; then
