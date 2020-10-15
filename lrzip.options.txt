@@ -1,0 +1,61 @@
+lrzip version 0.721beta
+Copyright (C) Con Kolivas 2006-2016
+Copyright (C) Peter Hyman 2007-2020
+Based on rzip Copyright (C) Andrew Tridgell 1998-2003
+
+Usage: lrzip [options] <file...>
+Compression Options:
+--------------------
+	--lzma			lzma compression (default)
+	-b, --bzip2		bzip2 compression
+	-g, --gzip		gzip compression using zlib
+	-l, --lzo		lzo compression (ultra fast)
+	-n, --no-compress	no backend compression - prepare for other compressor
+	-z, --zpaq		zpaq compression (best, extreme compression, extremely slow)
+	-L, --level level	set lzma/bzip2/gzip compression level (1-9, default 7)
+	--dictsize		Set lzma Dictionary Size for LZMA ds=12 to 30 expressed as 2^ds
+Filtering Options:
+	--x86			Use x86 filter (for all compression modes)
+	--arm			Use ARM filter (for all compression modes)
+	--armt			Use ARMT filter (for all compression modes)
+	--ppc			Use PPC filter (for all compression modes)
+	--sparc			Use SPARC filter (for all compression modes)
+	--ia64			Use IA64 filter (for all compression modes)
+	--delta	[1..32]		Use Delta filter (for all compression modes) (1 (default) -17, then multiples of 16 to 256)
+Additional Compression Options:
+	-e, --encrypt[=password] password protected sha512/aes128 encryption on compression
+	-D, --delete		delete existing files
+	-f, --force		force overwrite of any existing files
+	-K, --keep-broken	keep broken or damaged output files
+	-o, --outfile filename	specify the output file name and/or path
+	-O, --outdir directory	specify the output directory when -o is not used
+	-S, --suffix suffix	specify compressed suffix (default '.lrz')
+Low level Compression Options:
+	-N, --nice-level value	Set nice value to value (default 19)
+	-m, --maxram size	Set maximum available ram in hundreds of MB
+				overrides detected amount of available ram
+	-T, --threshold		Disable LZO compressibility testing
+	-U, --unlimited		Use unlimited window size beyond ramsize (potentially much slower)
+	-w, --window size	maximum compression window in hundreds of MB
+				default chosen by heuristic dependent on ram and chosen compression
+Decompression Options:
+----------------------
+	-d, --decompress	decompress
+	-t, --test		test compressed file integrity
+	-c, -C, --check		check integrity of file written on decompression
+General Options:
+----------------
+	-h, -?, --help		show help
+	-H, --hash		display md5 hash integrity information
+	-i, --info		show compressed file information
+	-q, --quiet		don't show compression progress
+	-p, --threads value	Set processor count to override number of threads
+	-r, --recursive		operate recursively on directories
+	-v[v], --verbose	Increase verbosity
+	-V, --version		show version
+
+LRZIP=NOCONFIG environment variable setting can be used to bypass lrzip.conf.
+TMP environment variable will be used for storage of temporary files when needed.
+TMPDIR may also be stored in lrzip.conf file.
+
+If no filenames or "-" is specified, stdin/out will be used.

@@ -1,0 +1,4 @@
+Add help screens
+Add lrzip execution
+Add tar embedding (tar -I "lrzip ....." -cf file.tar.lrz)
+Probably lots of other enhancements
