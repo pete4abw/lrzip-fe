@@ -16,6 +16,15 @@ SAVEIFS=$IFS
 
 PROG=$(basename $0)
 
+# get screen dimensions and center values
+# in case we need to manipulate boxes
+max=$(dialog --print-maxsize --output-fd 1)
+# format MaxSize: YYY, XXX
+screen_y=$(echo $max | cut -f2 -d' ' | cut -f1 -d',') # after space, before ,
+screen_x=$(echo $max | cut -f2 -d',' | cut -f2 -d' ') # after comma, after space
+center_y=$((screen_y/2))
+center_x=$((screen_x/2))
+
 check_error()
 {
 	RETCODE=$?
@@ -31,17 +40,19 @@ get_advanced()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Advanced lrzip options" \
-		--cr-wrap --form \
+		--cr-wrap \
+		--item-help \
+		--form \
 		"Expert Options\nAdvanced Users Only\nDefault Values used if blank" \
 		0 0 0 \
-		"                    Show Hash (Y/N): " 1 1 "$tHASH "      1 39 5 4 \
-		"             Number of Threads (##): " 2 1 "$tTHREADS "   2 39 5 4 \
-		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD " 3 39 5 4 \
-		"                   Nice Value (###): " 4 1 "$tNICE "      4 39 5 4 \
-		"         Maximum Ram x 100Mb (####): " 5 1 "$tMAXRAM "    5 39 5 5 \
-		"  Memory Window Size x 100Mb (####): " 6 1 "$tWINDOW "    6 39 5 5 \
-		"  Unlimited Ram Use (CAREFUL) (Y/N): " 7 1 "$tUNLIMITED " 7 39 5 4 \
-		"                      Encrypt (Y/N): " 8 1 "$tENCRYPT "   8 39 5 4 \
+		"                    Show Hash (Y/N): " 1 1 "$tHASH "      1 39 5 4 "Show MD5 Hash Integrity Information" \
+		"             Number of Threads (##): " 2 1 "$tTHREADS "   2 39 5 4 "Set processor count to override number of threads" \
+		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD " 3 39 5 4 "Disable LZO Compressibility Testing" \
+		"                   Nice Value (###): " 4 1 "$tNICE "      4 39 5 4 "Set Nice to value ###" \
+		"         Maximum Ram x 100Mb (####): " 5 1 "$tMAXRAM "    5 39 5 5 "Override detected system ram to ### (in 100s of MB)" \
+		"  Memory Window Size x 100Mb (####): " 6 1 "$tWINDOW "    6 39 5 5 "Override heuristically detected compression window size (in 100s of MB)" \
+		"  Unlimited Ram Use (CAREFUL) (Y/N): " 7 1 "$tUNLIMITED " 7 39 5 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
+		"                      Encrypt (Y/N): " 8 1 "$tENCRYPT "   8 39 5 4 "Password protect lrzip file" \
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator
@@ -99,13 +110,15 @@ get_file_handling()
 	[ x"$tKEEP" == "x" ]	&& tKEEP="off"
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: File Handling" \
-		--no-tags --separate-output \
+		--no-tags \
+		--separate-output \
+		--item-help \
 		--checklist "File Handling Options" \
 		0 0 0 \
 		--  \
-		"--force" "Force Overwrite" "$tFORCE" \
-		"--delete" "Delete Source File after work" "$tDELETE" \
-		"--keep-broken" "Keep broken output file" "$tKEEP" \
+		"--force" "Force Overwrite" "$tFORCE" "Overwrite output file" \
+		"--delete" "Delete Source File after work" "$tDELETE" "Delete input file after compression/decompression" \
+		"--keep-broken" "Keep broken output file" "$tKEEP" "Keep broken file if lrzip is interrupted or other error" \
 		2>/tmp/lfilehandling.dia
 	check_error
 
@@ -145,22 +158,26 @@ get_filter()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Pre-Compression Filter" \
-		--no-tags --radiolist "Select Filter" \
+		--no-tags \
+		--item-help \
+		--radiolist "Select Filter" \
 		0 0 0 \
 		-- \
-		"--x86" "x86" "off" \
-		"--arm" "arm" "off" \
-		"--armt" "armt" "off" \
-		"--ppc" "ppc" "off" \
-		"--sparc" "sparc" "off" \
-		"--ia64" "ia64" "off" \
-		"--delta=" "delta" "off" \
+		"--x86" "x86" "off" "Use x86 code pre-compression filter" \
+		"--arm" "arm" "off" "Use arm code pre-compression filter" \
+		"--armt" "armt" "off" "Use armt code pre-compression filter" \
+		"--ppc" "ppc" "off" "Use ppc code pre-compression filter" \
+		"--sparc" "sparc" "off" "Use sparc code pre-compression filter" \
+		"--ia64" "ia64" "off" "Use ia64 code pre-compression filter" \
+		"--delta=" "delta" "off" "Use delta code pre-compression filter. Delta offset value to be input next." \
 		2>/tmp/lfilter.dia
 	check_error
 	FILTER=$(cat /tmp/lfilter.dia)
 	if [ "x$FILTER" == "x--delta=" ] ; then
-		dialog --clear --inputbox "Enter Delta Value:" \
-			0 0 "1" 2>/tmp/ldelta.dia
+		dialog --clear \
+			--title "Delta Value" \
+			--inputbox "Enter Delta Filter Offset Value:" 0 41 "1" \
+			2>/tmp/ldelta.dia
 		check_error
 		DELTA=$(</tmp/ldelta.dia)
 	else
@@ -172,18 +189,20 @@ get_level()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Compression Level" \
-		--no-tags --radiolist "Compression Level" \
+		--no-tags \
+		--item-help \
+		--radiolist "Compression Level" \
 		0 0 0 \
 		--  \
-		"--level=1" "Level 1" "off" \
-		"--level=2" "Level 2" "off" \
-		"--level=3" "Level 3" "off" \
-		"--level=4" "Level 4" "off" \
-		"--level=5" "Level 5" "off" \
-		"--level=6" "Level 6" "off" \
-		"--level=7" "Level 7 (default)" "on" \
-		"--level=8" "Level 8" "off" \
-		"--level=9" "Level 9" "off" \
+		"--level=1" "Level 1" "off" "Set Compression Level 1 for $METHOD" \
+		"--level=2" "Level 2" "off" "Set Compression Level 2 for $METHOD" \
+		"--level=3" "Level 3" "off" "Set Compression Level 3 for $METHOD" \
+		"--level=4" "Level 4" "off" "Set Compression Level 4 for $METHOD" \
+		"--level=5" "Level 5" "off" "Set Compression Level 5 for $METHOD" \
+		"--level=6" "Level 6" "off" "Set Compression Level 6 for $METHOD" \
+		"--level=7" "Level 7 (default)" "on" "Set Compression Level 7 for $METHOD" \
+		"--level=8" "Level 8" "off" "Set Compression Level 8 for $METHOD" \
+		"--level=9" "Level 9" "off" "Set Compression Level 9 for $METHOD" \
 		2>/tmp/llevel.dia
 	check_error
 	LEVEL=$(</tmp/llevel.dia)
@@ -193,15 +212,17 @@ get_method()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Compression Method" \
-		--no-tags --radiolist "Compression Method" \
+		--no-tags \
+		--item-help \
+		--radiolist "Compression Method" \
 		0 0 0 \
 		-- \
-		"--lzma" "lzma (default)" "on" \
-		"--bzip" "bzip" "off" \
-		"--gzip" "gzip" "off" \
-		"--lzo" "lzo" "off" \
-		"--rzip" "rzip" "off" \
-		"--zpaq" "zpaq" "off" \
+		"--lzma" "lzma (default)" "on" "Default LZMA Compression" \
+		"--bzip" "bzip" "off" "BZIP2 Compression" \
+		"--gzip" "gzip" "off" "GZIP Compression" \
+		"--lzo" "lzo" "off" "LZO Compression" \
+		"--rzip" "rzip" "off" "Do NOT Compress. Just pre-process using RZIP (Fastest)." \
+		"--zpaq" "zpaq" "off" "Use ZPAQ Compression (Slowest)." \
 		2>/tmp/lmethod.dia
 	check_error
 	METHOD=$(</tmp/lmethod.dia)
@@ -212,15 +233,17 @@ get_output()
 	# use temp variables for dialog and add command at end
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Output Options" \
-		--cr-wrap --form \
+		--cr-wrap \
+		--item-help \
+		--form \
 		"Set either Output Directory (-O) \n
 - OR - \n
 Output Filename (-o)\n
 -S sets Filename Suffix" \
-0 0 0 \
-	"Output Directory (-O): " 1 1 "$tOUTDIR " 1 25 64 64 \
-	"Output Filename (-o): "  2 1 "$tOUTNAME " 2 25 64 64 \
-	"Filename Suffix (-S): "  3 1 "$tSUFFIX " 3 25 16 16 \
+		0 0 0 \
+		"Output Directory (-O): " 1 1 "$tOUTDIR " 1 25 64 64 "Compressed/Decompressed file will be written to Output Directory. Cannot be combined with Output Filename (-o)." \
+		"Output Filename (-o): "  2 1 "$tOUTNAME " 2 25 64 64 "Set Output Filename. Cannot be combined with Output Directory (-O)." \
+		"Filename Suffix (-S): "  3 1 "$tSUFFIX " 3 25 16 16 "Set Filename Suffix (ex. .mysffix) instead of or in addition to .lrz." \
 	2>/tmp/loutopts.dia
 	check_error
 
@@ -263,13 +286,15 @@ get_verbosity()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: Verbosity" \
-		--no-tags --radiolist "Verbosity" \
+		--no-tags \
+		--item-help \
+		--radiolist "Verbosity" \
 		0 0 0 \
 		-- \
-		"--verbose" "Verbose" "off" \
-		"--verbose --verbose" "Maximum Verbosity" "off" \
-		"--progress" "Show Progress" "on" \
-		"--quiet" "Silent. Show no progress" "off" \
+		"--verbose" "Verbose" "off" "Show lrzip settings and progress prior to compression/decompression" \
+		"--verbose --verbose" "Maximum Verbosity" "off" "Show compression/decompression/extra info on lrzip execugtion in addition to -v option" \
+		"--progress" "Show Progress" "on" "Only show progress, no other verbose options on compression/decompression" \
+		"--quiet" "Silent. Show no progress" "off" "Be quiet and show nothing on compression/decompression" \
 		2>/tmp/lverbosity.dia
 	check_error
 	VERBOSITY=$(</tmp/lverbosity.dia)
