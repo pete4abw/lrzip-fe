@@ -31,15 +31,22 @@ Version 0.7x of **lrzip** has 39 options. Some are mutually
 exclusive, (such as `-O and -o`), other can be combined, but only
 in some modes. (see file `lrzip.options.txt`)
 
+lrzip-fe.sh now has the ability to present short or long options
+for lrzip. Some options, such as FILTERING, only have long
+options. The selection can be made on the main menu by selecting
+the **Toggle SHORT/LONG Commands** button. At any point, you can
+restart the choices by selecting the **Restart** button.
+
 If an option is not selected, it is not shown.  If an option is
 not selected and has a default value, the default will silently
 be used (e.g. lzma compression, versus `--lzma`).  If an
-**lrzip.conf** file exists, it's options will be silently used.
-Only long options are shown for improved readability.
+**lrzip.conf** file exists, its options will be silently used
+unless overridden by current option choices.
 
-lrzip-fe does not execute the lrzip program, merely constructs a
-command line that may be copied and used.  Hopefully, lrzip-fe
-will enhance your usage and understanding of lrzip.
+lrzip-fe does not execute the lrzip program (yet), merely
+constructs a command line that may be copied and used.
+Hopefully, lrzip-fe will enhance your usage and understanding of
+lrzip.
 
 ## About Dialog
 
