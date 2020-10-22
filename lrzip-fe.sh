@@ -25,15 +25,27 @@ screen_x=$(echo $max | cut -f2 -d',' | cut -f2 -d' ') # after comma, after space
 center_y=$((screen_y/2))
 center_x=$((screen_x/2))
 
+# Show infobox on exit with build command line
+# $1 = message to show
+# $2 = error code
+# this ends program
+show_command()
+{
+	local COMMANDLINELEN
+	let COMMANDLINELEN=${#COMMANDLINE}+4
+	[ $COMMANDLINELEN -ge $screen_x ] && let COMMANDLINELEN=$screen_x-4
+	[ $COMMANDLINELEN -lt 56 ] && let COMMANDLINELEN=56
+
+	dialog --infobox \
+		"$1:\n\n$COMMANDLINE\n" 6 $COMMANDLINELEN
+	exit $2
+}
+
 check_error()
 {
 	RETCODE=$?
-	if [ $RETCODE -ne $DIALOG_OK -a $RETCODE -ne $DIALOG_EXTRA ] ; then
-		dialog --infobox \
-		"Exiting due to cancel.\nCommand line so far: \n$COMMANDLINE" 0 0
-		
-		exit -1
-	fi
+	[ $RETCODE -ne $DIALOG_OK -a $RETCODE -ne $DIALOG_EXTRA ] && \
+		show_command "Exiting due to cancel.\nCommand line so far" -1
 }
 
 # return option from file
@@ -141,6 +153,8 @@ get_advanced()
 				;;
 		esac
 	done
+	# restore field separator
+	IFS=$SAVEIFS
 }
 
 get_file()
@@ -155,9 +169,6 @@ get_file()
 
 get_file_handling()
 {
-	[ x"$tFORCE" == "x" ]	&& tFORCE="off"
-	[ x"$tDELETE" == "x" ]	&& tDELETE="off"
-	[ x"$tKEEP" == "x" ]	&& tKEEP="off"
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: File Handling" \
 		--no-tags \
@@ -205,6 +216,7 @@ get_file_handling()
 
 		esac
 	done
+	IFS=$SAVEIFS
 }
 
 get_filter()
@@ -216,25 +228,52 @@ get_filter()
 		--radiolist "Select Filter" \
 		0 0 0 \
 		-- \
-		"--x86" "x86" "off" "Use x86 code pre-compression filter" \
-		"--arm" "arm" "off" "Use arm code pre-compression filter" \
-		"--armt" "armt" "off" "Use armt code pre-compression filter" \
-		"--ppc" "ppc" "off" "Use ppc code pre-compression filter" \
-		"--sparc" "sparc" "off" "Use sparc code pre-compression filter" \
-		"--ia64" "ia64" "off" "Use ia64 code pre-compression filter" \
-		"--delta=" "delta" "off" "Use delta code pre-compression filter. Delta offset value to be input next." \
+		"--x86" "x86" "$tx86" "Use x86 code pre-compression filter" \
+		"--arm" "arm" "$tARM" "Use arm code pre-compression filter" \
+		"--armt" "armt" "$tARMT" "Use armt code pre-compression filter" \
+		"--ppc" "ppc" "$tPPC" "Use ppc code pre-compression filter" \
+		"--sparc" "sparc" "$tSPARC" "Use sparc code pre-compression filter" \
+		"--ia64" "ia64" "$tia64" "Use ia64 code pre-compression filter" \
+		"--delta=" "delta" "$tDELTA" "Use delta code pre-compression filter. Delta offset value to be input next." \
 		2>/tmp/lfilter.dia
 	check_error
 	FILTER=$(cat /tmp/lfilter.dia)
-	if [ "x$FILTER" == "x--delta=" ] ; then
+	tx86="off"
+	tARM="off"
+	tARMT="off"
+	tPPC="off"
+	tSPARC="off"
+	tia64="off"
+	tDELTA="off"
+
+	# clear Delta values if not selected
+	if [ $FILTER != "--delta=" ] ; then
+		DELTA=
+		tDELTAVAL=1
+	fi
+	if [ $FILTER == "--x86" ] ; then
+		tx86="on"
+	elif [ $FILTER == "--arm" ] ; then
+		tARM="on"
+	elif [ $FILTER == "--armt" ] ; then
+		tARMT="on"
+	elif [ $FILTER == "--ppc" ] ; then
+		tPPC="on"
+	elif [ $FILTER == "--sparc" ] ; then
+		tSPARC="on"
+	elif [ $FILTER == "--ia64" ] ; then
+		tia64="on"
+	elif [ $FILTER == "--delta" ] ; then
+		tDELTA="on"
+		# set Delta offset and remember it in tDELTAVAL
 		dialog --clear \
 			--title "Delta Value" \
-			--inputbox "Enter Delta Filter Offset Value:" 0 41 "1" \
+			--inputbox "Enter Delta Filter Offset Value:" 0 41 "$tDELTAVAL" \
 			2>/tmp/ldelta.dia
 		check_error
 		DELTA=$(</tmp/ldelta.dia)
-	else
-		DELTA=
+		tDELTA="on"
+		tDELTAVAL=$DELTA
 	fi
 }
 
@@ -247,19 +286,49 @@ get_level()
 		--radiolist "Compression Level" \
 		0 0 0 \
 		--  \
-		"L 1|--level=1" "Level 1" "off" "Set Compression Level 1 for $METHOD" \
-		"L 2|--level=2" "Level 2" "off" "Set Compression Level 2 for $METHOD" \
-		"L 3|--level=3" "Level 3" "off" "Set Compression Level 3 for $METHOD" \
-		"L 4|--level=4" "Level 4" "off" "Set Compression Level 4 for $METHOD" \
-		"L 5|--level=5" "Level 5" "off" "Set Compression Level 5 for $METHOD" \
-		"L 6|--level=6" "Level 6" "off" "Set Compression Level 6 for $METHOD" \
-		"L 7|--level=7" "Level 7 (default)" "on" "Set Compression Level 7 for $METHOD" \
-		"L 8|--level=8" "Level 8" "off" "Set Compression Level 8 for $METHOD" \
-		"L 9|--level=9" "Level 9" "off" "Set Compression Level 9 for $METHOD" \
+		"L 1|--level=1" "Level 1" "$tLEVEL1" "Set Compression Level 1 for $METHOD" \
+		"L 2|--level=2" "Level 2" "$tLEVEL2" "Set Compression Level 2 for $METHOD" \
+		"L 3|--level=3" "Level 3" "$tLEVEL3" "Set Compression Level 3 for $METHOD" \
+		"L 4|--level=4" "Level 4" "$tLEVEL4" "Set Compression Level 4 for $METHOD" \
+		"L 5|--level=5" "Level 5" "$tLEVEL5" "Set Compression Level 5 for $METHOD" \
+		"L 6|--level=6" "Level 6" "$tLEVEL6" "Set Compression Level 6 for $METHOD" \
+		"L 7|--level=7" "Level 7 (default)" "$tLEVEL7" "Set Compression Level 7 for $METHOD" \
+		"L 8|--level=8" "Level 8" "$tLEVEL8" "Set Compression Level 8 for $METHOD" \
+		"L 9|--level=9" "Level 9" "$tLEVEL9" "Set Compression Level 9 for $METHOD" \
 		2>/tmp/llevel.dia
 	check_error
 	return_sl_option "/tmp/llevel.dia"
 	LEVEL=$RETURN_VAL
+	tLEVEL1="off"
+	tLEVEL2="off"
+	tLEVEL3="off"
+	tLEVEL4="off"
+	tLEVEL5="off"
+	tLEVEL6="off"
+	tLEVEL7="off"
+	tLEVEL8="off"
+	tLEVEL9="off"
+
+	if [ $LEVEL == "L 1" -o $LEVEL == "--level=1" ] ; then
+		tLEVEL1="on"
+	elif [ $LEVEL == "L 2" -o $LEVEL == "--level=2" ] ; then
+		tLEVEL2="on"
+	elif [ $LEVEL == "L 3" -o $LEVEL == "--level=3" ] ; then
+		tLEVEL3="on"
+	elif [ $LEVEL == "L 4" -o $LEVEL == "--level=4" ] ; then
+		tLEVEL4="on"
+	elif [ $LEVEL == "L 5" -o $LEVEL == "--level=5" ] ; then
+		tLEVEL5="on"
+	elif [ $LEVEL == "L 6" -o $LEVEL == "--level=6" ] ; then
+		tLEVEL6="on"
+	elif [ $LEVEL == "L 7" -o $LEVEL == "--level=7" ] ; then
+		tLEVEL7="on"
+	elif [ $LEVEL == "L 8" -o $LEVEL == "--level=8" ] ; then
+		tLEVEL8="on"
+	elif [ $LEVEL == "L 9" -o $LEVEL == "--level=9" ] ; then
+		tLEVEL9="on"
+	fi
+
 }
 
 get_method()
@@ -271,16 +340,38 @@ get_method()
 		--radiolist "Compression Method" \
 		0 0 0 \
 		-- \
-		"|--lzma" "lzma (default)" "on" "Default LZMA Compression" \
-		"b|--bzip" "bzip" "off" "BZIP2 Compression" \
-		"g|--gzip" "gzip" "off" "GZIP Compression" \
-		"l|--lzo" "lzo" "off" "LZO Compression" \
-		"n|--rzip" "rzip" "off" "Do NOT Compress. Just pre-process using RZIP (Fastest)." \
-		"z|--zpaq" "zpaq" "off" "Use ZPAQ Compression (Slowest)." \
+		"|--lzma" "lzma (default)" "$tLZMA" "Default LZMA Compression" \
+		"b|--bzip" "bzip" "$tBZIP" "BZIP2 Compression" \
+		"g|--gzip" "gzip" "$tGZIP" "GZIP Compression" \
+		"l|--lzo" "lzo" "$tLZO" "LZO Compression" \
+		"n|--rzip" "rzip" "$tRZIP" "Do NOT Compress. Just pre-process using RZIP (Fastest)." \
+		"z|--zpaq" "zpaq" "$tZPAQ" "Use ZPAQ Compression (Slowest)." \
 		2>/tmp/lmethod.dia
 	check_error
 	return_sl_option "/tmp/lmethod.dia"
 	METHOD=$RETURN_VAL
+
+	tLZMA="off"
+	tBZIP="off"
+	tGZIP="off"
+	tLZO="off"
+	tRZIP="off"
+	tZPAQ="off"
+
+	if [ $METHOD == "--lzma" -o x$METHOD == "x" ] ; then
+		tLZMA="on"
+	elif [ $METHOD == "--bzip" -o $METHOD == "b" ] ; then
+		tBZIP="on"
+	elif [ $METHOD == "--gzip" -o $METHOD == "g" ] ; then
+		tGZIP="on"
+	elif [ $METHOD == "--lzo" -o $METHOD == "l" ] ; then
+		tLZO="on"
+	elif [ $METHOD == "--rzip" -o $METHOD == "n" ] ; then
+		tRZIP="on"
+	elif [ $METHOD == "--zpaq" -o $METHOD == "z" ] ; then
+		tZPAQ="on"
+	fi
+
 }
 
 get_output()
@@ -318,8 +409,8 @@ Output Filename (-o)\n
 
 	if [ ${#tOUTDIR} -gt 0 -a ${#tOUTNAME} -gt 0 ] ; then
 	       # ERROR
-		dialog --title "ERROR!" \
-	 		--msgbox "Cannot specify both an\n\
+		dialog --title "ERROR!" --msgbox "Cannot specify both an\n\
+
 Output Directory: $tOUTDIR \n\
 and an \n\
 Output Filename: $tOUTNAME \n\
@@ -353,14 +444,32 @@ get_verbosity()
 		--radiolist "Verbosity" \
 		0 0 0 \
 		-- \
-		"v|--verbose" "Verbose" "off" "Show lrzip settings and progress prior to compression/decompression" \
-		"vv|--verbose --verbose" "Maximum Verbosity" "off" "Show compression/decompression/extra info on lrzip execugtion in addition to -v option" \
-		"P|--progress" "Show Progress" "on" "Only show progress, no other verbose options on compression/decompression" \
-		"q|--quiet" "Silent. Show no progress" "off" "Be quiet and show nothing on compression/decompression" \
+		"v|--verbose" "Verbose" "$tVERBOSE" "Show lrzip settings and progress prior to compression/decompression" \
+		"vv|--verbose --verbose" "Maximum Verbosity" "$tMAXVERBOSE" "Show compression/decompression/extra info on lrzip execugtion in addition to -v option" \
+		"P|--progress" "Show Progress" "$tPROGRESS" "Only show progress, no other verbose options on compression/decompression" \
+		"q|--quiet" "Silent. Show no progress" "$tQUIET" "Be quiet and show nothing on compression/decompression" \
 		2>/tmp/lverbosity.dia
 	check_error
 	return_sl_option "/tmp/lverbosity.dia"
-	VERBOSITY=$RETURN_VAL
+	VERBOSITY="$RETURN_VAL"
+
+	tVERBOSE="off"
+	tMAXVERBOSE="off"
+	tPROGRESS="off"
+	tQUIET="off"
+
+	if [ "$VERBOSITY" == "--verbose" -o $VERBOSITY == "v" ] ; then
+		tVERBOSE="on"
+	elif [ "$VERBOSITY" == "--progress" -o $VERBOSITY == "P" ] ; then
+		tPROGRESS="on"
+	elif [ "$VERBOSITY" == "--quiet" -o $VERBOSITY == "q" ] ; then
+		tQUIET="on"
+	# for some reason testing for max verbosity like above does not work.
+	# so just testing for any other value after all the above
+	elif [ ! -z "$VERBOSITY" ] ; then
+		tMAXVERBOSE="on"
+	fi
+
 }
 
 
@@ -368,118 +477,192 @@ fillcommandline()
 {
 	COMMANDLINE="lrzip"
 	if [ "$SHORTLONG" == "LONG" ]; then
-		[ ! -z $LMODE ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $LMODE")
-		[ ! -z $METHOD ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $METHOD")
-		[ ! -z $LEVEL ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $LEVEL")
-		[ ! -z $FILTER ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $FILTER")
-		[ ! -z $DELTA ] 	&& COMMANDLINE=$(echo "$COMMANDLINE$DELTA")
-		[ ! -z $VERBOSITY ]	&& COMMANDLINE=$(echo "$COMMANDLINE $VERBOSITY")
-		[ ! -z $FORCE ]		&& COMMANDLINE=$(echo "$COMMANDLINE $FORCE")
-		[ ! -z $DELETE ]	&& COMMANDLINE=$(echo "$COMMANDLINE $DELETE")
-		[ ! -z $KEEP ]		&& COMMANDLINE=$(echo "$COMMANDLINE $KEEP")
-		[ ! -z $OUTDIR ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $OUTDIR")
-		[ ! -z $OUTNAME ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $OUTNANE")
-		[ ! -z $SUFFIX ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $SUFFIX")
-		[ ! -z $HASH ]		&& COMMANDLINE=$(echo "$COMMANDLINE $HASH")
-		[ ! -z $THREADS ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $THREADS")
-		[ ! -z $THRESHOLD ]	&& COMMANDLINE=$(echo "$COMMANDLINE $THRESHOLD")
-		[ ! -z $NICE ]		&& COMMANDLINE=$(echo "$COMMANDLINE $NICE")
-		[ ! -z $MAXRAM ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $MAXRAM")
-		[ ! -z $WINDOW ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $WINDOW")
-		[ ! -z $UNLIMITED ]	&& COMMANDLINE=$(echo "$COMMANDLINE $UNLIMITED")
-		[ ! -z $ENCRYPT ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $ENCRYPT")
-		[ ! -z $FILE ]		&& COMMANDLINE=$(echo "$COMMANDLINE $FILE")
+		[ ! -z $LMODE ]		&& COMMANDLINE="$COMMANDLINE $LMODE"
+		[ ! -z $METHOD ]	&& COMMANDLINE="$COMMANDLINE $METHOD"
+		[ ! -z $LEVEL ]		&& COMMANDLINE="$COMMANDLINE $LEVEL"
+		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
+		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z "$VERBOSITY" ]	&& COMMANDLINE="$COMMANDLINE $VERBOSITY"
+		[ ! -z $FORCE ]		&& COMMANDLINE="$COMMANDLINE $FORCE"
+		[ ! -z $DELETE ]	&& COMMANDLINE="$COMMANDLINE $DELETE"
+		[ ! -z $KEEP ]		&& COMMANDLINE="$COMMANDLINE $KEEP"
+		[ ! -z $OUTDIR ]	&& COMMANDLINE="$COMMANDLINE $OUTDIR"
+		[ ! -z $OUTNAME ]	&& COMMANDLINE="$COMMANDLINE $OUTNANE"
+		[ ! -z $SUFFIX ]	&& COMMANDLINE="$COMMANDLINE $SUFFIX"
+		[ ! -z $HASH ]		&& COMMANDLINE="$COMMANDLINE $HASH"
+		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE $THREADS"
+		[ ! -z $THRESHOLD ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLD"
+		[ ! -z $NICE ]		&& COMMANDLINE="$COMMANDLINE $NICE"
+		[ ! -z $MAXRAM ]	&& COMMANDLINE="$COMMANDLINE $MAXRAM"
+		[ ! -z $WINDOW ]	&& COMMANDLINE="$COMMANDLINE $WINDOW"
+		[ ! -z $UNLIMITED ]	&& COMMANDLINE="$COMMANDLINE $UNLIMITED"
+		[ ! -z $ENCRYPT ]	&& COMMANDLINE="$COMMANDLINE $ENCRYPT"
+		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
 	else
-		COMMANDLINE=$(echo "$COMMANDLINE ")
+		COMMANDLINE="$COMMANDLINE "
 		let firsttime=0
 		if [ ! -z $LMODE ] ; then
-			COMMANDLINE=$(echo "$COMMANDLINE-$LMODE")
+			COMMANDLINE="$COMMANDLINE-$LMODE"
 			firsttime=1
 		fi
 		if [ ! -z $METHOD ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$METHOD")
+				COMMANDLINE="$COMMANDLINE$METHOD"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$METHOD")
+				COMMANDLINE="$COMMANDLINE-$METHOD"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $VERBOSITY ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$VERBOSITY")
+				COMMANDLINE="$COMMANDLINE$VERBOSITY"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$VERBOSITY")
+				COMMANDLINE="$COMMANDLINE-$VERBOSITY"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $FORCE ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$FORCE")
+				COMMANDLINE="$COMMANDLINE$FORCE"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$FORCE")
+				COMMANDLINE="$COMMANDLINE-$FORCE"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $DELETE ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$DELETE")
+				COMMANDLINE="$COMMANDLINE$DELETE"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$DELETE")
+				COMMANDLINE="$COMMANDLINE-$DELETE"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $KEEP ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$KEEP")
+				COMMANDLINE="$COMMANDLINE$KEEP"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$KEEP")
+				COMMANDLINE="$COMMANDLINE-$KEEP"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $HASH ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$HASH")
+				COMMANDLINE="$COMMANDLINE$HASH"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$HASH")
+				COMMANDLINE="$COMMANDLINE-$HASH"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $UNLIMITED ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$UNLIMITED")
+				COMMANDLINE="$COMMANDLINE$UNLIMITED"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$UNLIMITED")
+				COMMANDLINE="$COMMANDLINE-$UNLIMITED"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $ENCRYPT ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$ENCRYPT")
+				COMMANDLINE="$COMMANDLINE$ENCRYPT"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$ENCRYPT")
+				COMMANDLINE="$COMMANDLINE-$ENCRYPT"
 				let firsttime=1
 			fi
 		fi
 		if [ ! -z $THRESHOLD ] ; then
 			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE=$(echo "$COMMANDLINE$THRESHOLD")
+				COMMANDLINE="$COMMANDLINE$THRESHOLD"
 			else
-				COMMANDLINE=$(echo "$COMMANDLINE-$THRESHOLD")
+				COMMANDLINE="$COMMANDLINE-$THRESHOLD"
 				let firsttime=1
 			fi
 		fi
-		[ ! -z $LEVEL ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$LEVEL")
-		[ ! -z $OUTDIR ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$OUTDIR")
-		[ ! -z $OUTNAME ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$OUTNANE")
-		[ ! -z $SUFFIX ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$SUFFIX")
-		[ ! -z $THREADS ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$THREADS")
-		[ ! -z $FILTER ] 	&& COMMANDLINE=$(echo "$COMMANDLINE $FILTER")
-		[ ! -z $DELTA ] 	&& COMMANDLINE=$(echo "$COMMANDLINE$DELTA")
-		[ ! -z $NICE ]		&& COMMANDLINE=$(echo "$COMMANDLINE -$NICE")
-		[ ! -z $MAXRAM ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$MAXRAM")
-		[ ! -z $WINDOW ] 	&& COMMANDLINE=$(echo "$COMMANDLINE -$WINDOW")
-		[ ! -z $FILE ]		&& COMMANDLINE=$(echo "$COMMANDLINE $FILE")
+		[ ! -z $LEVEL ]		&& COMMANDLINE="$COMMANDLINE -$LEVEL"
+		[ ! -z $OUTDIR ]	&& COMMANDLINE="$COMMANDLINE -$OUTDIR"
+		[ ! -z $OUTNAME ]	&& COMMANDLINE="$COMMANDLINE -$OUTNANE"
+		[ ! -z $SUFFIX ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
+		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE -$THREADS"
+		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
+		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z $NICE ]		&& COMMANDLINE="$COMMANDLINE -$NICE"
+		[ ! -z $MAXRAM ]	&& COMMANDLINE="$COMMANDLINE -$MAXRAM"
+		[ ! -z $WINDOW ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
+		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
+}
+
+# Clear All VAriables
+# At program start, all variables are cleared
+# When user selects RESTART, all variables are cleared
+clear_vars()
+{
+	# main program variables to construct an lrzip commandline
+	LMODE=
+	METHOD=
+	LEVEL=
+	FILTER=
+	DELTA=
+	VERBOSITY=
+	FORCE=
+	DELETE=
+	KEEP=
+	OUTDIR=
+	OUTNAME=
+	SUFFIX=
+	FILE=
+	HASH=
+	THREADS=
+	THRESHOLD=
+	NICE=
+	MAXRAM=
+	WINDOW=
+	UNLIITED=
+	ENCRYPT=
+	RETURN_VAL=
+
+# t Variables are temporary and hold values through the program unless restarted
+# defaults are set as required
+	tLZMA="on"
+	tBZIP="off"
+	tGZIP="off"
+	tLZO="off"
+	tRZIP="off"
+	tZPAQ="off"
+	tLEVEL1="off"
+	tLEVEL2="off"
+	tLEVEL3="off"
+	tLEVEL4="off"
+	tLEVEL5="off"
+	tLEVEL6="off"
+	tLEVEL7="on"
+	tLEVEL8="off"
+	tLEVEL9="off"
+	tx86="off"
+	tARM="off"
+	tARMT="off"
+	tPPC="off"
+	tSPARC="off"
+	tia64="off"
+	tDELTA="off"
+	tDELTAVAL=1
+	tVERBOSE="off"
+	tMAXVERBOSE="off"
+	tPROGRESS="off"
+	tQUIET="off"
+	tFORCE="off"
+	tDELETE="off"
+	tKEEP="off"
+	tOUTDIR=
+	tOUTNAME=
+	tSUFFIX=
+	tHASH=
+	tTHREADS=
+	tTHRESHOLD=
+	tNICE=
+	tMAXRAM=
+	tWINDOW=
+	tUNLIMITED=
+	tENCRYPT=
 }
 
 # Main program starts here
@@ -492,28 +675,7 @@ while [ $RETCODE -eq $DIALOG_EXTRA ]
 do
 
 # clear everything
-LMODE=
-METHOD=
-LEVEL=
-FILTER=
-DELTA=
-VERBOSITY=
-FORCE=
-DELETE=
-KEEP=
-OUTDIR=
-OUTNAME=
-SUFFIX=
-FILE=
-HASH=
-THREADS=
-THRESHOLD=
-NICE=
-MAXRAM=
-WINDOW=
-UNLIITED=
-ENCRYPT=
-RETURN_VAL=
+clear_vars
 
 if [ $SHORTLONG == "LONG" ] ; then
 	LOCALSL="SHORT"
@@ -555,7 +717,7 @@ if [ -z $LMODE ]; then
 	while (true)
 	do
 		fillcommandline
-		dialog 	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --backtitle "$COMMANDLINE" \
 			--title "$PROG: Compression Options" \
 			--extra-button --extra-label "Restart" \
 			--menu "Compression Menu" \
@@ -568,7 +730,7 @@ if [ -z $LMODE ]; then
 			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
 			"ADVANCED"	"Advanced Compression Options" \
-			"EXIT"		"Cancel" \
+			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
@@ -596,12 +758,12 @@ if [ -z $LMODE ]; then
 		fi
 	done
 # done Compress
-elif [ x"$LMODE" == "x--decompress" -o x"$LMODE" == "xd" ] ; then
+elif [ "$LMODE" == "--decompress" -o "$LMODE" == "d" ] ; then
 	# Decompress
 	while (true)
 	do
 		fillcommandline
-		dialog 	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --backtitle "$COMMANDLINE" \
 			--title "$PROG: Decompression Options" \
 			--extra-button --extra-label "Restart" \
 			--menu "Decompression Menu" \
@@ -610,7 +772,7 @@ elif [ x"$LMODE" == "x--decompress" -o x"$LMODE" == "xd" ] ; then
 			"VERBOSITY"	"Verbose Options" \
 			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
-			"EXIT"		"Cancel" \
+			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
@@ -629,21 +791,21 @@ elif [ x"$LMODE" == "x--decompress" -o x"$LMODE" == "xd" ] ; then
 		fi
 	done
 # done Decompress
-elif [ x"$LMODE" == "x--test" -o x"$LMODE" == "x--info" -o x"$LMODE" == "xt" -o x"$LMODE" == "xi" ] ; then
+elif [ "$LMODE" == "--test" -o "$LMODE" == "--info" -o "$LMODE" == "t" -o "$LMODE" == "i" ] ; then
 	# Test or Info
 	[ $LMODE == "--test" -o $LMODE == "t" ] && MODE="Test"
 	[ $LMODE == "--info" -o $LMODE == "i" ] && MODE="Info"
 	while (true)
 	do
 		fillcommandline
-		dialog 	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --backtitle "$COMMANDLINE" \
 			--title "$PROG: $MODE Options" \
 			--extra-button --extra-label "Restart" \
 			--menu "$MODE Menu" \
 			0 0 0 \
 			"FILE"		"File to Decompress" \
 			"VERBOSITY"	"Verbose Options" \
-			"EXIT"		"Cancel" \
+			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
@@ -662,6 +824,7 @@ fi
 
 done # main outer loop
 
-dialog --infobox \
-	"lrzip command line options have been set as follows\n\n\
-	$COMMANDLINE\n" 0 0
+# Finish up by displaying the command
+show_command "lrzip command line options have been set as follows" 0
+
+#program ends from show_command()

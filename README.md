@@ -48,6 +48,35 @@ constructs a command line that may be copied and used.
 Hopefully, lrzip-fe will enhance your usage and understanding of
 lrzip.
 
+## Usage Examples
+
+Once a command has been constructed with `lrzip-fe.sh`, `lrzip`
+can be executed one of three ways.
+1. just cut and paste the `lrzip command`
+2. prepend the `lrzip command` with `LRZIP=NOCONFIG` to ignore
+   any preset options in `lrzip.conf`
+3. use `tar -I|--use-compress-program lrzip command` but omit the
+   filename and include -cf tarfilename and tardirectory(ies) or
+   files.
+
+### tar example with file(s)
+
+`tar -I "lrzip -options..." -cf tarfile.tar.lrz file1 file2
+file3...`
+### tar example with directory(ies)
+
+`tar -I "lrzip -options..." -cf tarfile.tar.lrz dir1 dir2 dir3
+...
+
+`tar` will also work with the **x** and **t** options to extract
+or list files using `lrzip`. Just use it with no lrzip options.
+
+`tar -I lrzip -xf tarfile.tar.lrz file(s)`
+
+or
+
+`tar -I lrzip -t[v|vv]f tarfile.tar.lrz`
+
 ## About Dialog
 
 The **dialog** program uses **ncurses**. There are certain things
