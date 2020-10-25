@@ -7,12 +7,14 @@
 # no warranties, restrictions
 # just attribution appreciated
 
+# First release version
+VERSION=0.1
+
 # Some constants
 DIALOG_OK=0
 DIALOG_CANCEL=1
 DIALOG_EXTRA=3
 DIALOG_ESC=255
-SAVEIFS=$IFS
 
 PROG=$(basename $0)
 
@@ -32,12 +34,16 @@ center_x=$((screen_x/2))
 show_command()
 {
 	local COMMANDLINELEN
-	let COMMANDLINELEN=${#COMMANDLINE}+4
+	if [ ${#COMMANDLINE} -gt ${#TARCOMMANDLINE} ] ; then
+		let COMMANDLINELEN=${#COMMANDLINE}+4
+	else
+		let COMMANDLINELEN=${#TARCOMMANDLINE}+4
+	fi
 	[ $COMMANDLINELEN -ge $screen_x ] && let COMMANDLINELEN=$screen_x-4
 	[ $COMMANDLINELEN -lt 56 ] && let COMMANDLINELEN=56
 
 	dialog --infobox \
-		"$1:\n\n$COMMANDLINE\n" 6 $COMMANDLINELEN
+		"$1:\n\n$COMMANDLINE\n$TARCOMMANDLINE" 6 $COMMANDLINELEN
 	exit $2
 }
 
@@ -57,7 +63,7 @@ return_sl_option()
 	local SL_FIELD=2
 	# if 0 length file or non-existent
 	[ ! -s "$1" -o ! -e "$1" ] && return -1
-	[ "$SHORTLONG" == "SHORT" ] && SL_FIELD=1
+	[ "$SHORTLONG" = "SHORT" ] && SL_FIELD=1
 
 	RETURN_VAL=$(cat "$1" | cut -f $SL_FIELD -d'|')
 }
@@ -67,7 +73,7 @@ return_sl_option()
 # $2 = long option
 return_sl_option_value()
 {
-	if [ "$SHORTLONG" == "LONG" ] ; then
+	if [ "$SHORTLONG" = "LONG" ] ; then
 		RETURN_VAL="$2"
 	else
 		RETURN_VAL="$1"
@@ -93,8 +99,8 @@ get_advanced()
 		"                      Encrypt (Y/N): " 8 1 "$tENCRYPT "   8 39 6 4 "Password protect lrzip file" \
 		2>/tmp/ladvanced.dia
 	check_error
-# make newline field separator
-	IFS=$'\xA'
+# make newline field separator local. No need to revert later.
+	local IFS=$'\xA'
 	local i=0
 	for TMPVAR in $(</tmp/ladvanced.dia)
 	do
@@ -102,7 +108,7 @@ get_advanced()
 		let i=i+1
 		case $i in
 			1) tHASH=$TMPVAR
-				if [ "$tHASH" == "Y" -o "$tHASH" == "y" ] ; then
+				if [ "$tHASH" = "Y" -o "$tHASH" = "y" ] ; then
 					return_sl_option_value "H" "--hash"
 					HASH="$RETURN_VAL"
 				fi
@@ -114,7 +120,7 @@ get_advanced()
 				fi
 				;;
 			3) tTHRESHOLD=$TMPVAR
-				if [ "$tTHRESHOLD" == "Y" -o "$tTHRESHOLD" == "y" ] ; then
+				if [ "$tTHRESHOLD" = "Y" -o "$tTHRESHOLD" = "y" ] ; then
 					return_sl_option_value "T" "--threshold"
 					THRESHOLD="$RETURN_VAL"
 				fi
@@ -138,13 +144,13 @@ get_advanced()
 				fi
 				;;
 			7) tUNLIMITED=$TMPVAR
-				if [ "$tUNLIMITED" == "Y" -o "$tUNLIMITED" == "y" ] ; then
+				if [ "$tUNLIMITED" = "Y" -o "$tUNLIMITED" = "y" ] ; then
 					return_sl_option_value "U" "--unlimited"
 					UNLIMITED="$RETURN_VAL"
 				fi
 				;;
 			8) tENCRYPT=$TMPVAR
-				if [ "$tENCRYPT" == "Y" -o "$tENCRYPT" == "y" ] ; then
+				if [ "$tENCRYPT" = "Y" -o "$tENCRYPT" = "y" ] ; then
 					return_sl_option_value "e" "--encrypt"
 					ENCRYPT="$RETURN_VAL"
 				fi
@@ -153,18 +159,17 @@ get_advanced()
 				;;
 		esac
 	done
-	# restore field separator
-	IFS=$SAVEIFS
 }
 
 get_file()
 {
 	dialog --backtitle "$COMMANDLINE" \
 		--title "$PROG: File Selection" \
-		--fselect ./ 20 50 \
+		--fselect "$tFILE" 20 50 \
 		2>/tmp/lfile.dia
 	check_error
 	FILE=$(</tmp/lfile.dia)
+	tFILE="$FILE"
 }
 
 get_file_handling()
@@ -183,9 +188,9 @@ get_file_handling()
 		2>/tmp/lfilehandling.dia
 	check_error
 
-# make newline field separator
+# make newline field separator local. No need to revert later.
 # clear variables
-	IFS=$'\xA'
+	local IFS=$'\xA'
 	tFORCE=
 	tDELETE=
 	tKEEP=
@@ -193,7 +198,7 @@ get_file_handling()
 	DELETE=
 	KEEP=
 	SL_FIELD=2
-	[ $SHORTLONG == "SHORT" ] && SL_FIELD=1
+	[ $SHORTLONG = "SHORT" ] && SL_FIELD=1
 	for TMPVAR in $(</tmp/lfilehandling.dia)
 	do
 		RETURN_VAL=$(echo $TMPVAR | cut -f $SL_FIELD -d'|')
@@ -216,7 +221,6 @@ get_file_handling()
 
 		esac
 	done
-	IFS=$SAVEIFS
 }
 
 get_filter()
@@ -251,19 +255,19 @@ get_filter()
 		DELTA=
 		tDELTAVAL=1
 	fi
-	if [ $FILTER == "--x86" ] ; then
+	if [ $FILTER = "--x86" ] ; then
 		tx86="on"
-	elif [ $FILTER == "--arm" ] ; then
+	elif [ $FILTER = "--arm" ] ; then
 		tARM="on"
-	elif [ $FILTER == "--armt" ] ; then
+	elif [ $FILTER = "--armt" ] ; then
 		tARMT="on"
-	elif [ $FILTER == "--ppc" ] ; then
+	elif [ $FILTER = "--ppc" ] ; then
 		tPPC="on"
-	elif [ $FILTER == "--sparc" ] ; then
+	elif [ $FILTER = "--sparc" ] ; then
 		tSPARC="on"
-	elif [ $FILTER == "--ia64" ] ; then
+	elif [ $FILTER = "--ia64" ] ; then
 		tia64="on"
-	elif [ $FILTER == "--delta" ] ; then
+	elif [ $FILTER = "--delta" ] ; then
 		tDELTA="on"
 		# set Delta offset and remember it in tDELTAVAL
 		dialog --clear \
@@ -309,23 +313,23 @@ get_level()
 	tLEVEL8="off"
 	tLEVEL9="off"
 
-	if [ $LEVEL == "L 1" -o $LEVEL == "--level=1" ] ; then
+	if [ "$LEVEL" = "L 1" -o "$LEVEL" = "--level=1" ] ; then
 		tLEVEL1="on"
-	elif [ $LEVEL == "L 2" -o $LEVEL == "--level=2" ] ; then
+	elif [ "$LEVEL" = "L 2" -o "$LEVEL" = "--level=2" ] ; then
 		tLEVEL2="on"
-	elif [ $LEVEL == "L 3" -o $LEVEL == "--level=3" ] ; then
+	elif [ "$LEVEL" = "L 3" -o "$LEVEL" = "--level=3" ] ; then
 		tLEVEL3="on"
-	elif [ $LEVEL == "L 4" -o $LEVEL == "--level=4" ] ; then
+	elif [ "$LEVEL" = "L 4" -o "$LEVEL" = "--level=4" ] ; then
 		tLEVEL4="on"
-	elif [ $LEVEL == "L 5" -o $LEVEL == "--level=5" ] ; then
+	elif [ "$LEVEL" = "L 5" -o "$LEVEL" = "--level=5" ] ; then
 		tLEVEL5="on"
-	elif [ $LEVEL == "L 6" -o $LEVEL == "--level=6" ] ; then
+	elif [ "$LEVEL" = "L 6" -o "$LEVEL" = "--level=6" ] ; then
 		tLEVEL6="on"
-	elif [ $LEVEL == "L 7" -o $LEVEL == "--level=7" ] ; then
+	elif [ "$LEVEL" = "L 7" -o "$LEVEL" = "--level=7" ] ; then
 		tLEVEL7="on"
-	elif [ $LEVEL == "L 8" -o $LEVEL == "--level=8" ] ; then
+	elif [ "$LEVEL" = "L 8" -o "$LEVEL" = "--level=8" ] ; then
 		tLEVEL8="on"
-	elif [ $LEVEL == "L 9" -o $LEVEL == "--level=9" ] ; then
+	elif [ "$LEVEL" = "L 9" -o "$LEVEL" = "--level=9" ] ; then
 		tLEVEL9="on"
 	fi
 
@@ -358,17 +362,17 @@ get_method()
 	tRZIP="off"
 	tZPAQ="off"
 
-	if [ $METHOD == "--lzma" -o x$METHOD == "x" ] ; then
+	if [ $METHOD = "--lzma" -o x$METHOD = "x" ] ; then
 		tLZMA="on"
-	elif [ $METHOD == "--bzip" -o $METHOD == "b" ] ; then
+	elif [ $METHOD = "--bzip" -o $METHOD = "b" ] ; then
 		tBZIP="on"
-	elif [ $METHOD == "--gzip" -o $METHOD == "g" ] ; then
+	elif [ $METHOD = "--gzip" -o $METHOD = "g" ] ; then
 		tGZIP="on"
-	elif [ $METHOD == "--lzo" -o $METHOD == "l" ] ; then
+	elif [ $METHOD = "--lzo" -o $METHOD = "l" ] ; then
 		tLZO="on"
-	elif [ $METHOD == "--rzip" -o $METHOD == "n" ] ; then
+	elif [ $METHOD = "--rzip" -o $METHOD = "n" ] ; then
 		tRZIP="on"
-	elif [ $METHOD == "--zpaq" -o $METHOD == "z" ] ; then
+	elif [ $METHOD = "--zpaq" -o $METHOD = "z" ] ; then
 		tZPAQ="on"
 	fi
 
@@ -393,8 +397,8 @@ Output Filename (-o)\n
 		2>/tmp/loutopts.dia
 	check_error
 
-# make newline field separator
-	IFS=$'\xA'
+# make newline field separator local. No need to revert later.
+	local IFS=$'\xA'
 	local i=0
 	for TMPVAR in $(</tmp/loutopts.dia)
 	do
@@ -424,15 +428,24 @@ Clearing both" 0 0
 	if [ ${#tOUTDIR} -gt 0 ] ; then
 		return_sl_option_value "O $tOUTDIR" "--outdir=$tOUTDIR"
 		OUTDIR="$RETURN_VAL"
-	elif [ ${#tOUTNAME} -gt 0 ] ; then
+	else
+		tOUTDIR=
+		OUTDIR=
+	fi
+	if [ ${#tOUTNAME} -gt 0 ] ; then
 		return_sl_option_value "o $tOUTNAME" "--outname=$tOUTNAMER"
 		OUTNAME="$RETURN_VAL"
-	elif [ ${#tSUFFIX} -gt 0 ] ; then
+	else
+		tOUTNAME=
+		OUTNAME=
+	fi
+	if [ ${#tSUFFIX} -gt 0 ] ; then
 		return_sl_option_value "S $tSUFFIX" "--suffix=$tSUFFIX"
 		SUFFIX="$RETURN_VAL"
+	else
+		tSUFFIX=
+		SUFFIX=
 	fi
-# restore field separator
-	IFS=$SAVEIFS
 }
 
 get_verbosity()
@@ -458,16 +471,14 @@ get_verbosity()
 	tPROGRESS="off"
 	tQUIET="off"
 
-	if [ "$VERBOSITY" == "--verbose" -o $VERBOSITY == "v" ] ; then
+	if [ "$VERBOSITY" = "--verbose" -o $VERBOSITY = "v" ] ; then
 		tVERBOSE="on"
-	elif [ "$VERBOSITY" == "--progress" -o $VERBOSITY == "P" ] ; then
-		tPROGRESS="on"
-	elif [ "$VERBOSITY" == "--quiet" -o $VERBOSITY == "q" ] ; then
-		tQUIET="on"
-	# for some reason testing for max verbosity like above does not work.
-	# so just testing for any other value after all the above
-	elif [ ! -z "$VERBOSITY" ] ; then
+	elif [ "$VERBOSITY" = "--verbose --verbose" -o $VERBOSITY = "vv" ] ; then
 		tMAXVERBOSE="on"
+	elif [ "$VERBOSITY" = "--progress" -o $VERBOSITY = "P" ] ; then
+		tPROGRESS="on"
+	elif [ "$VERBOSITY" = "--quiet" -o $VERBOSITY = "q" ] ; then
+		tQUIET="on"
 	fi
 
 }
@@ -476,7 +487,7 @@ get_verbosity()
 fillcommandline()
 {
 	COMMANDLINE="lrzip"
-	if [ "$SHORTLONG" == "LONG" ]; then
+	if [ "$SHORTLONG" = "LONG" ]; then
 		[ ! -z $LMODE ]		&& COMMANDLINE="$COMMANDLINE $LMODE"
 		[ ! -z $METHOD ]	&& COMMANDLINE="$COMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& COMMANDLINE="$COMMANDLINE $LEVEL"
@@ -561,14 +572,6 @@ fillcommandline()
 				let firsttime=1
 			fi
 		fi
-		if [ ! -z $ENCRYPT ] ; then
-			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE="$COMMANDLINE$ENCRYPT"
-			else
-				COMMANDLINE="$COMMANDLINE-$ENCRYPT"
-				let firsttime=1
-			fi
-		fi
 		if [ ! -z $THRESHOLD ] ; then
 			if [ $firsttime -eq 1 ] ; then
 				COMMANDLINE="$COMMANDLINE$THRESHOLD"
@@ -577,18 +580,82 @@ fillcommandline()
 				let firsttime=1
 			fi
 		fi
-		[ ! -z $LEVEL ]		&& COMMANDLINE="$COMMANDLINE -$LEVEL"
-		[ ! -z $OUTDIR ]	&& COMMANDLINE="$COMMANDLINE -$OUTDIR"
-		[ ! -z $OUTNAME ]	&& COMMANDLINE="$COMMANDLINE -$OUTNANE"
-		[ ! -z $SUFFIX ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
-		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE -$THREADS"
-		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
-		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
-		[ ! -z $NICE ]		&& COMMANDLINE="$COMMANDLINE -$NICE"
-		[ ! -z $MAXRAM ]	&& COMMANDLINE="$COMMANDLINE -$MAXRAM"
-		[ ! -z $WINDOW ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
-		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
+		if [ ! -z $ENCRYPT ] ; then
+			if [ $firsttime -eq 1 ] ; then
+				COMMANDLINE="$COMMANDLINE$ENCRYPT"
+			else
+				COMMANDLINE="$COMMANDLINE-$ENCRYPT"
+				let firsttime=1
+			fi
+		fi
+		[ ! -z "$LEVEL" ]	&& COMMANDLINE="$COMMANDLINE -$LEVEL"
+		[ ! -z "$OUTDIR" ]	&& COMMANDLINE="$COMMANDLINE -$OUTDIR"
+		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE -$OUTNANE"
+		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
+		[ ! -z "$THREADS" ]	&& COMMANDLINE="$COMMANDLINE -$THREADS"
+		[ ! -z "$FILTER" ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
+		[ ! -z "$DELTA" ]	&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z "$NICE" ]	&& COMMANDLINE="$COMMANDLINE -$NICE"
+		[ ! -z "$MAXRAM" ]	&& COMMANDLINE="$COMMANDLINE -$MAXRAM"
+		[ ! -z "$WINDOW" ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
+		[ ! -z "$FILE" ]	&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
+
+	# TAR Command
+	# Only minimal useful commands used
+	# tar -I|use-compress-program
+	# compress -c,  decompress -x, test will equal list -t, info will equal -t
+	# verbose will apply to tar, not lrzip
+	# lrzip will show progress, otherwise no other verbose
+	# output options ignored
+	# force, keep, delete ignored
+	# all advanced options ignored
+	# encryption ignored
+	# all tar options short except --use-compress-program/-I
+	# tar file extension will always be and expect .tar.lrz
+
+	TCOMMANDLINE=
+	TARCOMMANDLINE="tar"
+	if [ "$SHORTLONG" = "LONG" ]; then
+		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program=\"lrzip --progress"
+		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
+		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
+		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
+		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+	else
+		TARCOMMANDLINE="$TARCOMMANDLINE -I \"lrzip -P"
+		if [ ! -z $METHOD ] ; then
+			TCOMMANDLINE="$TCOMMANDLINE$METHOD"
+		fi
+		if [ ! -z "$LEVEL" ] ; then
+			TCOMMANDLINE="$TCOMMANDLINE$LEVEL"
+		fi
+		[ ! -z "$FILTER" ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
+		[ ! -z "$DELTA" ]	&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+	fi
+	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE\""
+
+	TFILENAME="$FILE"
+	if [ -z "$LMODE" ] ; then
+		TARCOMMANDLINE="$TARCOMMANDLINE -c"
+		TFILENAME="$FILE.tar.lrz $FILE"
+	elif [ $LMODE = "--decompress" -o $LMODE = "-d" ] ; then
+		TARCOMMANDLINE="$TARCOMMANDLINE -x"
+	elif [ $LMODE = "--test" -o $LMODE="-t" ] ; then
+		TARCOMMANDLINE="$TARCOMMANDLINE -t"
+	elif [ $LMODE = "--info" -o $LMODE="-i" ] ; then
+		TARCOMMANDLINE="$TARCOMMANDLINE -t"
+	fi
+
+	if [ ! -z "$VERBOSITY" ] ; then
+		if [ "$VERBOSITY" = "--verbose" -o "$VERBOSITY" = "v" ] ; then
+			TARCOMMANDLINEV=v
+		elif [ "$VERBOSITY" = "--verbose --verbose" -o "$VERBOSITY" = "vv" ] ; then
+			TARCOMMANDLINEV=vv
+		fi
+		TARCOMMANDLINE="$TARCOMMANDLINE$TARCOMMANDLINEV"
+	fi
+	TARCOMMANDLINE="$TARCOMMANDLINE""f $TFILENAME"
 }
 
 # Clear All VAriables
@@ -622,6 +689,7 @@ clear_vars()
 
 # t Variables are temporary and hold values through the program unless restarted
 # defaults are set as required
+	tFILE=
 	tLZMA="on"
 	tBZIP="off"
 	tGZIP="off"
@@ -677,13 +745,13 @@ do
 # clear everything
 clear_vars
 
-if [ $SHORTLONG == "LONG" ] ; then
+if [ $SHORTLONG = "LONG" ] ; then
 	LOCALSL="SHORT"
 else
 	LOCALSL="LONG"
 fi
 
-dialog --title "Welcome to $PROG" \
+dialog --title "Welcome to $PROG - Version: $VERSION" \
 	--no-tags \
 	--extra-button --extra-label "Toggle $LOCALSL Commands" \
 	--ok-label "Select lrzip Mode" \
@@ -692,7 +760,7 @@ Choose an lrzip Action" \
 	0 0 0 \
 	"" "Compress a file" \
 	"d|--decompress" "Decompress a file"  \
-	"t|--test" "Test file integrityt" \
+	"t|--test" "Test file integrity" \
 	"i|--info" "Info - show file and stream block info" \
 	2>/tmp/lmode.dia
 
@@ -700,7 +768,7 @@ check_error
 
 #TOGGLE short or long command line options
 if [ $RETCODE -eq $DIALOG_EXTRA ] ; then
-	if [ $SHORTLONG == "LONG" ] ; then
+	if [ $SHORTLONG = "LONG" ] ; then
 		SHORTLONG="SHORT"
 	else
 		SHORTLONG="LONG"
@@ -737,28 +805,28 @@ if [ -z $LMODE ]; then
 
 		MENU=$(</tmp/lrzip.dia)
 
-		if [ "$MENU" == "FILE" ] ; then
+		if [ "$MENU" = "FILE" ] ; then
 			get_file;
-		elif [ "$MENU" == "METHOD" ] ; then
+		elif [ "$MENU" = "METHOD" ] ; then
 			get_method;
-		elif [ "$MENU" == "LEVEL" ] ; then
+		elif [ "$MENU" = "LEVEL" ] ; then
 			get_level;
-		elif [ "$MENU" == "FILTER" ] ; then
+		elif [ "$MENU" = "FILTER" ] ; then
 			get_filter;
-		elif [ "$MENU" == "VERBOSITY" ] ; then
+		elif [ "$MENU" = "VERBOSITY" ] ; then
 			get_verbosity;
-		elif [ "$MENU" == "FILE HANDLING" ] ; then
+		elif [ "$MENU" = "FILE HANDLING" ] ; then
 			get_file_handling;
-		elif [ "$MENU" == "OUTPUT" ] ; then
+		elif [ "$MENU" = "OUTPUT" ] ; then
 			get_output;
-		elif [ "$MENU" == "ADVANCED" ] ; then
+		elif [ "$MENU" = "ADVANCED" ] ; then
 			get_advanced;
-		elif [ "$MENU" == "EXIT" ] ; then
+		elif [ "$MENU" = "EXIT" ] ; then
 			break;
 		fi
 	done
 # done Compress
-elif [ "$LMODE" == "--decompress" -o "$LMODE" == "d" ] ; then
+elif [ "$LMODE" = "--decompress" -o "$LMODE" = "d" ] ; then
 	# Decompress
 	while (true)
 	do
@@ -778,23 +846,23 @@ elif [ "$LMODE" == "--decompress" -o "$LMODE" == "d" ] ; then
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
 	MENU=$(</tmp/lrzip.dia)
 
-		if [ "$MENU" == "FILE" ] ; then
+		if [ "$MENU" = "FILE" ] ; then
 			get_file;
-		elif [ "$MENU" == "VERBOSITY" ] ; then
+		elif [ "$MENU" = "VERBOSITY" ] ; then
 			get_verbosity;
-		elif [ "$MENU" == "FILE HANDLING" ] ; then
+		elif [ "$MENU" = "FILE HANDLING" ] ; then
 			get_file_handling;
-		elif [ "$MENU" == "OUTPUT" ] ; then
+		elif [ "$MENU" = "OUTPUT" ] ; then
 			get_output;
-		elif [ "$MENU" == "EXIT" ] ; then
+		elif [ "$MENU" = "EXIT" ] ; then
 			break;
 		fi
 	done
 # done Decompress
-elif [ "$LMODE" == "--test" -o "$LMODE" == "--info" -o "$LMODE" == "t" -o "$LMODE" == "i" ] ; then
+elif [ "$LMODE" = "--test" -o "$LMODE" = "--info" -o "$LMODE" = "t" -o "$LMODE" = "i" ] ; then
 	# Test or Info
-	[ $LMODE == "--test" -o $LMODE == "t" ] && MODE="Test"
-	[ $LMODE == "--info" -o $LMODE == "i" ] && MODE="Info"
+	[ $LMODE = "--test" -o $LMODE = "t" ] && MODE="Test"
+	[ $LMODE = "--info" -o $LMODE = "i" ] && MODE="Info"
 	while (true)
 	do
 		fillcommandline
@@ -811,11 +879,11 @@ elif [ "$LMODE" == "--test" -o "$LMODE" == "--info" -o "$LMODE" == "t" -o "$LMOD
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
 	MENU=$(</tmp/lrzip.dia)
 
-		if [ "$MENU" == "FILE" ] ; then
+		if [ "$MENU" = "FILE" ] ; then
 			get_file;
-		elif [ "$MENU" == "VERBOSITY" ] ; then
+		elif [ "$MENU" = "VERBOSITY" ] ; then
 			get_verbosity;
-		elif [ "$MENU" == "EXIT" ] ; then
+		elif [ "$MENU" = "EXIT" ] ; then
 			break;
 		fi
 	done

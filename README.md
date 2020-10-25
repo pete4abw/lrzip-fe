@@ -22,6 +22,8 @@ users fully explore the capabilities of:
 * Testing
 * Info
 
+![Main lrzip-fe.sh screen](screenshots/01-main-screen.jpg)
+
 Thats's really all there is to lrzip -- that is until you peek
 under the hood.
 
@@ -48,6 +50,33 @@ constructs a command line that may be copied and used.
 Hopefully, lrzip-fe will enhance your usage and understanding of
 lrzip.
 
+As options are selected, the current command line is shown at the
+top of the screen using dialog's --backtitle.
+
+Long Options lrzip backtitle.  
+![Backtitle showing lrzip-fe.sh long command line](screenshots/15-command-line-backtitle-long.jpg)
+
+Short Options lrzip backtitle.  
+![Backtitle showing lrzip-fe.sh short command line](screenshots/15-command-line-backtitle-short.jpg)
+
+lrzip-fe exits displaying a screen showing both the `lrzip` and
+`tar` command versions for the options selected.
+
+Long Options lrzip command line.  
+![Final Infobox](screenshots/14-command-line-infobox-longopt.jpg)
+
+Short Options lrzip command line.  
+
+![Final Infobox](screenshots/14-command-line-infobox-shortopt.jpg)
+
+## On tar output
+
+The `tar` output for lrzip-fe.sh will ignore most lrzip options.
+the tar output will include create, extract, list, and verbose
+options. Embedded lrzip within tar will only have method, level,
+filter (for lrzip >= 0.7x) and progress. The output tarfile name
+will have the extension `.tar.lrz`
+
 ## Usage Examples
 
 Once a command has been constructed with `lrzip-fe.sh`, `lrzip`
@@ -55,27 +84,9 @@ can be executed one of three ways.
 1. just cut and paste the `lrzip command`
 2. prepend the `lrzip command` with `LRZIP=NOCONFIG` to ignore
    any preset options in `lrzip.conf`
-3. use `tar -I|--use-compress-program lrzip command` but omit the
-   filename and include -cf tarfilename and tardirectory(ies) or
-   files.
+3. cut and paste the `tar` command
 
-### tar example with file(s)
-
-`tar -I "lrzip -options..." -cf tarfile.tar.lrz file1 file2
-file3...`
-### tar example with directory(ies)
-
-`tar -I "lrzip -options..." -cf tarfile.tar.lrz dir1 dir2 dir3
-...
-
-`tar` will also work with the **x** and **t** options to extract
-or list files using `lrzip`. Just use it with no lrzip options.
-
-`tar -I lrzip -xf tarfile.tar.lrz file(s)`
-
-or
-
-`tar -I lrzip -t[v|vv]f tarfile.tar.lrz`
+After copying and pasting, the commandline may be edited to suit.
 
 ## About Dialog
 
