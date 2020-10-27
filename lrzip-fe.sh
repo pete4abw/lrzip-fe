@@ -7,8 +7,18 @@
 # no warranties, restrictions
 # just attribution appreciated
 
-# First release version
-VERSION=0.1
+# Second release version
+VERSION=0.2
+
+# is lrzip even here?
+if [ ! -x $(which lrzip) ] ; then
+	echo "ERROR: lrzip program not found!"
+	exit -1
+fi
+
+# store help file
+LRZIPHELPFILE=/tmp/lrzip.help
+lrzip -h >$LRZIPHELPFILE 2>&1
 
 # Some constants
 DIALOG_OK=0
@@ -26,7 +36,17 @@ screen_y=$(echo $max | cut -f2 -d' ' | cut -f1 -d',') # after space, before ,
 screen_x=$(echo $max | cut -f2 -d',' | cut -f2 -d' ') # after comma, after space
 center_y=$((screen_y/2))
 center_x=$((screen_x/2))
-
+# for command output screens
+if [ $screen_x -lt 80 ] ; then
+	let width=$screen_x
+else
+	let width=80
+fi
+if [ $screen_y -lt 40 ] ; then
+	let height=$screen_y
+else
+	let height=40
+fi
 # Show infobox on exit with build command line
 # $1 = message to show
 # $2 = error code
@@ -82,7 +102,7 @@ return_sl_option_value()
 
 get_advanced()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Advanced lrzip options" \
 		--cr-wrap \
 		--item-help \
@@ -155,15 +175,28 @@ get_advanced()
 					ENCRYPT="$RETURN_VAL"
 				fi
 				;;
-			*) break;
+			*)
+				break
 				;;
 		esac
 	done
 }
 
+# set new directory
+change_dir()
+{
+	local CHGDIR
+	CHDIR=$(dialog --backtitle "Current Directory is: $PWD" \
+		--title "$PROG: Set Directory" \
+		--output-fd 1 \
+		--dselect "$CHDIR" 20 50 )
+
+	cd "$CHDIR"
+}
+
 get_file()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: File Selection" \
 		--fselect "$tFILE" 20 50 \
 		2>/tmp/lfile.dia
@@ -174,7 +207,7 @@ get_file()
 
 get_file_handling()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: File Handling" \
 		--no-tags \
 		--separate-output \
@@ -225,7 +258,7 @@ get_file_handling()
 
 get_filter()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Pre-Compression Filter" \
 		--no-tags \
 		--item-help \
@@ -283,7 +316,7 @@ get_filter()
 
 get_level()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Compression Level" \
 		--no-tags \
 		--item-help \
@@ -337,7 +370,7 @@ get_level()
 
 get_method()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Compression Method" \
 		--no-tags \
 		--item-help \
@@ -381,7 +414,7 @@ get_method()
 get_output()
 {
 	# use temp variables for dialog and add command at end
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Output Options" \
 		--cr-wrap \
 		--item-help \
@@ -450,7 +483,7 @@ Clearing both" 0 0
 
 get_verbosity()
 {
-	dialog --backtitle "$COMMANDLINE" \
+	dialog --colors --backtitle "$BCOMMANDLINE" \
 		--title "$PROG: Verbosity" \
 		--no-tags \
 		--item-help \
@@ -617,28 +650,43 @@ fillcommandline()
 	TCOMMANDLINE=
 	TARCOMMANDLINE="tar"
 	if [ "$SHORTLONG" = "LONG" ]; then
-		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program=\"lrzip --progress"
+		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program='lrzip"
 		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
-		TARCOMMANDLINE="$TARCOMMANDLINE -I \"lrzip -P"
+		TARCOMMANDLINE="$TARCOMMANDLINE -I 'lrzip "
+		local firsttime=
 		if [ ! -z $METHOD ] ; then
-			TCOMMANDLINE="$TCOMMANDLINE$METHOD"
+			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
+			let firsttime=1
 		fi
 		if [ ! -z "$LEVEL" ] ; then
-			TCOMMANDLINE="$TCOMMANDLINE$LEVEL"
+			if [ $firsttime -eq 1 ] ; then
+				TCOMMANDLINE="$TCOMMANDLINE$LEVEL"
+			else
+				TCOMMANDLINE="$TCOMMANDLINE-$LEVEL"
+				let firsttime=1
+			fi
+		fi
+		if [ "$VERBOSITY" = "P" ] ; then
+			if [ $firsttime -eq 1 ] ; then
+				TCOMMANDLINE="$TCOMMANDLINE$VERBOSITY"
+			else
+				TCOMMANDLINE="$TCOMMANDLINE-$VERBOSITY"
+			fi
 		fi
 		[ ! -z "$FILTER" ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z "$DELTA" ]	&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
 	fi
-	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE\""
+	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE'"
 
 	TFILENAME="$FILE"
 	if [ -z "$LMODE" ] ; then
 		TARCOMMANDLINE="$TARCOMMANDLINE -c"
-		TFILENAME="$FILE.tar.lrz $FILE"
+		[ ! -z "$FILE" ] && TFILENAME="$FILE.tar.lrz $FILE"
 	elif [ $LMODE = "--decompress" -o $LMODE = "-d" ] ; then
 		TARCOMMANDLINE="$TARCOMMANDLINE -x"
 	elif [ $LMODE = "--test" -o $LMODE="-t" ] ; then
@@ -656,6 +704,21 @@ fillcommandline()
 		TARCOMMANDLINE="$TARCOMMANDLINE$TARCOMMANDLINEV"
 	fi
 	TARCOMMANDLINE="$TARCOMMANDLINE""f $TFILENAME"
+
+	# set BCOMMANDLINE for BackTitle with inverted colors for tar
+	BCOMMANDLINE="$COMMANDLINE | \Zr$TARCOMMANDLINE\ZR"
+}
+
+run_lrzip()
+{
+	dialog --title "Executing lrzip" \
+		--prgbox "$COMMANDLINE" "$COMMANDLINE" $height $width
+}
+
+run_tar_lrzip()
+{
+	dialog --title "Executing tar and lrzip" \
+		--prgbox "$TARCOMMANDLINE" "$TARCOMMANDLINE" $height $width
 }
 
 # Clear All VAriables
@@ -686,6 +749,9 @@ clear_vars()
 	UNLIITED=
 	ENCRYPT=
 	RETURN_VAL=
+	COMMANDLINE=
+	TARCOMMANDLINE=
+	BCOMMANDLINE=
 
 # t Variables are temporary and hold values through the program unless restarted
 # defaults are set as required
@@ -735,6 +801,7 @@ clear_vars()
 
 # Main program starts here
 
+
 # set some globals
 RETCODE=$DIALOG_EXTRA
 SHORTLONG="LONG"
@@ -751,10 +818,15 @@ else
 	LOCALSL="LONG"
 fi
 
-dialog --title "Welcome to $PROG - Version: $VERSION" \
+dialog	--backtitle "Current Directory is: $PWD" \
+	--title "Welcome to $PROG - Version: $VERSION" \
 	--no-tags \
 	--extra-button --extra-label "Toggle $LOCALSL Commands" \
 	--ok-label "Select lrzip Mode" \
+	--scrollbar \
+	--hline "Press F1 for HELP" \
+	--hfile "$LRZIPHELPFILE" \
+	--exit-label "Close Help" \
 	--menu "Copyright 2020 Peter Hyman\nA front-end for lrzip\n\
 Choose an lrzip Action" \
 	0 0 0 \
@@ -762,6 +834,7 @@ Choose an lrzip Action" \
 	"d|--decompress" "Decompress a file"  \
 	"t|--test" "Test file integrity" \
 	"i|--info" "Info - show file and stream block info" \
+	"c|c" "Change working directory from $PWD" \
 	2>/tmp/lmode.dia
 
 check_error
@@ -780,25 +853,36 @@ return_sl_option "/tmp/lmode.dia"
 [ $? -eq -1 ] && RETURN_VAL=
 LMODE=$RETURN_VAL
 
-if [ -z $LMODE ]; then
+# Change Current Dir
+if [ "$LMODE" = "c" ] ; then
+	change_dir
+	RETCODE=$DIALOG_EXTRA
+	continue
+elif [ -z $LMODE ]; then
 	# Compress
 	while (true)
 	do
 		fillcommandline
-		dialog	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --colors --backtitle "$BCOMMANDLINE" \
 			--title "$PROG: Compression Options" \
 			--extra-button --extra-label "Restart" \
+			--scrollbar \
+			--hline "Press F1 for HELP" \
+			--hfile "$LRZIPHELPFILE" \
+			--exit-label "Close Help" \
 			--menu "Compression Menu" \
 			0 0 0 \
-			"FILE"		"File to Compress" \
-			"METHOD"	"Compression Method" \
-			"LEVEL"		"Compression Level" \
-			"FILTER"	"Pre-Compression Filter" \
-			"VERBOSITY"	"Verbose Options" \
-			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
-			"OUTPUT"	"Output Options" \
-			"ADVANCED"	"Advanced Compression Options" \
-			"EXIT"		"Done. Show Output" \
+			"FILE"			"File or Directory to Compress" \
+			"METHOD"		"Compression Method" \
+			"LEVEL"			"Compression Level" \
+			"FILTER"		"Pre-Compression Filter" \
+			"VERBOSITY"		"Verbose Options" \
+			"FILE HANDLING"		"Keep, Delete, Overwrite Files" \
+			"OUTPUT"		"Output Options" \
+			"ADVANCED"		"Advanced Compression Options" \
+			"RUN COMMAND"		"Run LRZIP Compression Program" \
+			"RUN TAR COMMAND"	"Run LRZIP Compression under TAR Program" \
+			"EXIT"			"Exit without running. Show Command Output" \
 			2>/tmp/lrzip.dia
 		check_error
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
@@ -806,23 +890,33 @@ if [ -z $LMODE ]; then
 		MENU=$(</tmp/lrzip.dia)
 
 		if [ "$MENU" = "FILE" ] ; then
-			get_file;
+			get_file
 		elif [ "$MENU" = "METHOD" ] ; then
-			get_method;
+			get_method
 		elif [ "$MENU" = "LEVEL" ] ; then
-			get_level;
+			get_level
 		elif [ "$MENU" = "FILTER" ] ; then
-			get_filter;
+			get_filter
 		elif [ "$MENU" = "VERBOSITY" ] ; then
-			get_verbosity;
+			get_verbosity
 		elif [ "$MENU" = "FILE HANDLING" ] ; then
-			get_file_handling;
+			get_file_handling
 		elif [ "$MENU" = "OUTPUT" ] ; then
-			get_output;
+			get_output
 		elif [ "$MENU" = "ADVANCED" ] ; then
-			get_advanced;
+			get_advanced
+		elif [ "$MENU" = "RUN COMMAND" ] ; then
+			run_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
+		elif [ "$MENU" = "RUN TAR COMMAND" ] ; then
+			run_tar_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
 		elif [ "$MENU" = "EXIT" ] ; then
-			break;
+			break
 		fi
 	done
 # done Compress
@@ -831,15 +925,21 @@ elif [ "$LMODE" = "--decompress" -o "$LMODE" = "d" ] ; then
 	while (true)
 	do
 		fillcommandline
-		dialog	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --colors --backtitle "$BCOMMANDLINE" \
 			--title "$PROG: Decompression Options" \
 			--extra-button --extra-label "Restart" \
+			--scrollbar \
+			--hline "Press F1 for HELP" \
+			--hfile "$LRZIPHELPFILE" \
+			--exit-label "Close Help" \
 			--menu "Decompression Menu" \
 			0 0 0 \
 			"FILE"		"File to Decompress" \
 			"VERBOSITY"	"Verbose Options" \
 			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
+			"RUN COMMAND"	"Run LRZIP Decompression Program" \
+			"RUN TAR COMMAND" "Run LRZIP Decompression under TAR Program" \
 			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
@@ -847,15 +947,25 @@ elif [ "$LMODE" = "--decompress" -o "$LMODE" = "d" ] ; then
 	MENU=$(</tmp/lrzip.dia)
 
 		if [ "$MENU" = "FILE" ] ; then
-			get_file;
+			get_file
 		elif [ "$MENU" = "VERBOSITY" ] ; then
-			get_verbosity;
+			get_verbosity
 		elif [ "$MENU" = "FILE HANDLING" ] ; then
-			get_file_handling;
+			get_file_handling
 		elif [ "$MENU" = "OUTPUT" ] ; then
-			get_output;
+			get_output
+		elif [ "$MENU" = "RUN COMMAND" ] ; then
+			run_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
+		elif [ "$MENU" = "RUN TAR COMMAND" ] ; then
+			run_tar_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
 		elif [ "$MENU" = "EXIT" ] ; then
-			break;
+			break
 		fi
 	done
 # done Decompress
@@ -866,13 +976,19 @@ elif [ "$LMODE" = "--test" -o "$LMODE" = "--info" -o "$LMODE" = "t" -o "$LMODE" 
 	while (true)
 	do
 		fillcommandline
-		dialog	--clear --backtitle "$COMMANDLINE" \
+		dialog	--clear --colors --backtitle "$BCOMMANDLINE" \
 			--title "$PROG: $MODE Options" \
 			--extra-button --extra-label "Restart" \
+			--scrollbar \
+			--hline "Press F1 for HELP" \
+			--hfile "$LRZIPHELPFILE" \
+			--exit-label "Close Help" \
 			--menu "$MODE Menu" \
 			0 0 0 \
 			"FILE"		"File to Decompress" \
 			"VERBOSITY"	"Verbose Options" \
+			"RUN COMMAND"	"Run LRZIP Compression Program" \
+			"RUN TAR COMMAND" "Run LRZIP Compression under TAR Program" \
 			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
@@ -880,11 +996,21 @@ elif [ "$LMODE" = "--test" -o "$LMODE" = "--info" -o "$LMODE" = "t" -o "$LMODE" 
 	MENU=$(</tmp/lrzip.dia)
 
 		if [ "$MENU" = "FILE" ] ; then
-			get_file;
+			get_file
 		elif [ "$MENU" = "VERBOSITY" ] ; then
-			get_verbosity;
+			get_verbosity
+		elif [ "$MENU" = "RUN COMMAND" ] ; then
+			run_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
+		elif [ "$MENU" = "RUN TAR COMMAND" ] ; then
+			run_tar_lrzip
+			# force restart
+			RETCODE=$DIALOG_EXTRA
+			break
 		elif [ "$MENU" = "EXIT" ] ; then
-			break;
+			break
 		fi
 	done
 # done Test or Info
@@ -893,6 +1019,6 @@ fi
 done # main outer loop
 
 # Finish up by displaying the command
-show_command "lrzip command line options have been set as follows" 0
+show_command "lrzip command line options have been set/executed as follows" 0
 
 #program ends from show_command()
