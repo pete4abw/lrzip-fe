@@ -21,6 +21,7 @@ users fully explore the capabilities of:
 * Decompression
 * Testing
 * Info
+* Change Working Directory
 
 ![Main lrzip-fe.sh screen](screenshots/01-main-screen.jpg)
 
@@ -45,13 +46,17 @@ be used (e.g. lzma compression, versus `--lzma`).  If an
 **lrzip.conf** file exists, its options will be silently used
 unless overridden by current option choices.
 
-lrzip-fe does not execute the lrzip program (yet), merely
-constructs a command line that may be copied and used.
-Hopefully, lrzip-fe will enhance your usage and understanding of
-lrzip.
+lrzip-fe can execute lrzip or tar with lrzip from any of the top
+level menus. It also incrementally creates an lrzip command line
+and one with tar as well. lrzip output is contained in a window.
+**No error checking is done on the command line**. If a file does
+not exist, or a command is not fully constructed, either `lrzip`
+or `tar` will return an error.  Hopefully, lrzip-fe will enhance
+your usage and understanding of lrzip.
 
-As options are selected, the current command line is shown at the
-top of the screen using dialog's --backtitle.
+As options are selected, the current command line for both
+`lrzip` and `tar` are shown at the top of the screen using
+dialog's --backtitle.
 
 Long Options lrzip backtitle.  
 ![Backtitle showing lrzip-fe.sh long command line](screenshots/15-command-line-backtitle-long.jpg)
@@ -79,8 +84,9 @@ will have the extension `.tar.lrz`
 
 ## Usage Examples
 
-Once a command has been constructed with `lrzip-fe.sh`, `lrzip`
-can be executed one of three ways.
+If `lrzip` is not run using the **RUN COMMAND** or **RUN TAR
+COMMAND** options, a command has been constructed with
+`lrzip-fe.sh`, `lrzip` can be executed one of three ways.
 1. just cut and paste the `lrzip command`
 2. prepend the `lrzip command` with `LRZIP=NOCONFIG` to ignore
    any preset options in `lrzip.conf`

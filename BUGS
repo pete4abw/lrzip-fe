@@ -1,1 +1,9 @@
-Most likely
+lrzip output does not scroll. This may be an issue with dialog.
+lrzip progress issues returns (\r) and in output screens creates
+a newline. This in combination with not being able to scroll
+makes it difficult to see what happened earlier in compression or
+decompression.
+
+October 2020
+Peter Hyman
+pete@peterhyman.com

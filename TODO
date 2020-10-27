@@ -1,3 +1,11 @@
-Add lrzip execution
-Add tar embedding (tar -I "lrzip ....." -cf file.tar.lrz)
+Add lrzip execution (done)
+Add tar embedding (tar -I "lrzip ....." -cf file.tar.lrz) (done)
+
+See about adding --dictsize option and -r recursive option.
+I am not keen on this idea.
+
 Probably lots of other enhancements
+
+October 2020
+Peter Hyman
+pete@peterhyman.com
