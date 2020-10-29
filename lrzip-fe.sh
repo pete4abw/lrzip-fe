@@ -53,17 +53,23 @@ fi
 # this ends program
 show_command()
 {
+	# Format height and width based on length of commands and messages and exit mode
 	local COMMANDLINELEN
+	local BOXHEIGHT=6
+	local MSGLEN=${#1}
+
 	if [ ${#COMMANDLINE} -gt ${#TARCOMMANDLINE} ] ; then
 		let COMMANDLINELEN=${#COMMANDLINE}+4
 	else
 		let COMMANDLINELEN=${#TARCOMMANDLINE}+4
 	fi
 	[ $COMMANDLINELEN -ge $screen_x ] && let COMMANDLINELEN=$screen_x-4
-	[ $COMMANDLINELEN -lt 56 ] && let COMMANDLINELEN=56
+	[ $COMMANDLINELEN -lt $MSGLEN ] && let COMMANDLINELEN=$MSGLEN+5
+
+	[ $2 -ne 0 ] && BOXHEIGHT=7
 
 	dialog --infobox \
-		"$1:\n\n$COMMANDLINE\n$TARCOMMANDLINE" 6 $COMMANDLINELEN
+		"$1:\n\n$COMMANDLINE\n$TARCOMMANDLINE" $BOXHEIGHT $COMMANDLINELEN
 	exit $2
 }
 
