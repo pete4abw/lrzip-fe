@@ -8,7 +8,7 @@
 # just attribution appreciated
 
 # Second release version
-VERSION=0.2
+VERSION=0.21
 
 # is lrzip even here?
 if [ ! -x $(which lrzip) ] ; then
@@ -131,7 +131,7 @@ get_advanced()
 	for TMPVAR in $(</tmp/ladvanced.dia)
 	do
 		TMPVAR="${TMPVAR/% /}" # remove trailing whitespace
-		let i=i+1
+		let i=$i+1
 		case $i in
 			1) tHASH=$TMPVAR
 				if [ "$tHASH" = "Y" -o "$tHASH" = "y" ] ; then
@@ -442,15 +442,15 @@ Output Filename (-o)\n
 	for TMPVAR in $(</tmp/loutopts.dia)
 	do
 		TMPVAR="${TMPVAR/% /}" # remove trailing whitespace
-		let i=i+1
+		let i=$i+1
 		case $i in
-			1) tOUTDIR=$TMPVAR;;
-			2) tOUTNAME=$TMPVAR;;
-			3) tSUFFIX=$TMPVAR;;
+			1) tOUTDIR="$TMPVAR";;
+			2) tOUTNAME="$TMPVAR";;
+			3) tSUFFIX="$TMPVAR";;
 		esac
 	done
 
-	if [ ${#tOUTDIR} -gt 0 -a ${#tOUTNAME} -gt 0 ] ; then
+	if [ ! -z "$tOUTDIR" -a ! -z "$tOUTNAME" ] ; then
 	       # ERROR
 		dialog --title "ERROR!" --msgbox "Cannot specify both an\n\
 
@@ -461,29 +461,21 @@ Output Filename: $tOUTNAME \n\
 Clearing both" 0 0
 		tOUTDIR=
 		tOUTNAME=
-		OUTDIR=
-		OUTNAME=
 	fi
-	if [ ${#tOUTDIR} -gt 0 ] ; then
+
+	OUTDIR=
+	OUTNAME=
+	if [ ! -z "$tOUTDIR" ] ; then
 		return_sl_option_value "O $tOUTDIR" "--outdir=$tOUTDIR"
 		OUTDIR="$RETURN_VAL"
-	else
-		tOUTDIR=
-		OUTDIR=
 	fi
-	if [ ${#tOUTNAME} -gt 0 ] ; then
-		return_sl_option_value "o $tOUTNAME" "--outname=$tOUTNAMER"
+	if [ ! -z "$tOUTNAME" ] ; then
+		return_sl_option_value "o $tOUTNAME" "--outname=$tOUTNAME"
 		OUTNAME="$RETURN_VAL"
-	else
-		tOUTNAME=
-		OUTNAME=
 	fi
-	if [ ${#tSUFFIX} -gt 0 ] ; then
+	if [ ! -z "$tSUFFIX" ] ; then
 		return_sl_option_value "S $tSUFFIX" "--suffix=$tSUFFIX"
 		SUFFIX="$RETURN_VAL"
-	else
-		tSUFFIX=
-		SUFFIX=
 	fi
 }
 
@@ -526,6 +518,7 @@ get_verbosity()
 fillcommandline()
 {
 	COMMANDLINE="lrzip"
+	local firsttime=
 	if [ "$SHORTLONG" = "LONG" ]; then
 		[ ! -z $LMODE ]		&& COMMANDLINE="$COMMANDLINE $LMODE"
 		[ ! -z $METHOD ]	&& COMMANDLINE="$COMMANDLINE $METHOD"
@@ -536,9 +529,9 @@ fillcommandline()
 		[ ! -z $FORCE ]		&& COMMANDLINE="$COMMANDLINE $FORCE"
 		[ ! -z $DELETE ]	&& COMMANDLINE="$COMMANDLINE $DELETE"
 		[ ! -z $KEEP ]		&& COMMANDLINE="$COMMANDLINE $KEEP"
-		[ ! -z $OUTDIR ]	&& COMMANDLINE="$COMMANDLINE $OUTDIR"
-		[ ! -z $OUTNAME ]	&& COMMANDLINE="$COMMANDLINE $OUTNANE"
-		[ ! -z $SUFFIX ]	&& COMMANDLINE="$COMMANDLINE $SUFFIX"
+		[ ! -z "$OUTDIR" ]	&& COMMANDLINE="$COMMANDLINE $OUTDIR"
+		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE $OUTNAME"
+		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE $SUFFIX"
 		[ ! -z $HASH ]		&& COMMANDLINE="$COMMANDLINE $HASH"
 		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE $THREADS"
 		[ ! -z $THRESHOLD ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLD"
@@ -629,7 +622,7 @@ fillcommandline()
 		fi
 		[ ! -z "$LEVEL" ]	&& COMMANDLINE="$COMMANDLINE -$LEVEL"
 		[ ! -z "$OUTDIR" ]	&& COMMANDLINE="$COMMANDLINE -$OUTDIR"
-		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE -$OUTNANE"
+		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE -$OUTNAME"
 		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
 		[ ! -z "$THREADS" ]	&& COMMANDLINE="$COMMANDLINE -$THREADS"
 		[ ! -z "$FILTER" ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
@@ -646,7 +639,7 @@ fillcommandline()
 	# compress -c,  decompress -x, test will equal list -t, info will equal -t
 	# verbose will apply to tar, not lrzip
 	# lrzip will show progress, otherwise no other verbose
-	# output options ignored
+	# output options emabled
 	# force, keep, delete ignored
 	# all advanced options ignored
 	# encryption ignored
@@ -655,6 +648,7 @@ fillcommandline()
 
 	TCOMMANDLINE=
 	TARCOMMANDLINE="tar"
+	let firsttime=0
 	if [ "$SHORTLONG" = "LONG" ]; then
 		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program='lrzip"
 		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
@@ -664,7 +658,6 @@ fillcommandline()
 		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
 		TARCOMMANDLINE="$TARCOMMANDLINE -I 'lrzip "
-		local firsttime=
 		if [ ! -z $METHOD ] ; then
 			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
 			let firsttime=1
@@ -692,7 +685,33 @@ fillcommandline()
 	TFILENAME="$FILE"
 	if [ -z "$LMODE" ] ; then
 		TARCOMMANDLINE="$TARCOMMANDLINE -c"
-		[ ! -z "$FILE" ] && TFILENAME="$FILE.tar.lrz $FILE"
+		# If FILE not set yet, skip, otherwise contruct output
+		if [ ! -z "$FILE" ] ; then
+			# if file does not have a .tar extension, add it
+			[ ${FILE: -4} != ".tar" ] && TFILENAME="$FILE.tar"
+			TFILENAME="$TFILENAME.lrz"
+			if [ ! -z "$OUTDIR" ] ; then
+				# strip lrzip command for OUTDIR
+				if [ "$SHORTLONG" = "LONG" ] ; then
+					ODIR="${OUTDIR#--outdir=}"
+				else
+					ODIR="${OUTDIR#O }"
+				fi
+				# add trailing slash if missing
+				[ ${ODIR: -1} != "/" ] && ODIR="$ODIR/"
+				# strip any leading directory for FILE
+				TFILENAME="$ODIR$(basename $TFILENAME)"
+			elif [ ! -z "$OUTNAME" ] ; then
+				# strip lrzip command for OUTNAME
+				if [ "$SHORTLONG" = "LONG" ] ; then
+					TFILENAME="${OUTNAME#--outname=}"
+				else
+					TFILENAME="${OUTNAME#o }"
+				fi
+			fi
+			# finish constructing compression command
+			TFILENAME="$TFILENAME $FILE"
+		fi
 	elif [ $LMODE = "--decompress" -o $LMODE = "-d" ] ; then
 		TARCOMMANDLINE="$TARCOMMANDLINE -x"
 	elif [ $LMODE = "--test" -o $LMODE="-t" ] ; then
@@ -709,6 +728,7 @@ fillcommandline()
 		fi
 		TARCOMMANDLINE="$TARCOMMANDLINE$TARCOMMANDLINEV"
 	fi
+
 	TARCOMMANDLINE="$TARCOMMANDLINE""f $TFILENAME"
 
 	# set BCOMMANDLINE for BackTitle with inverted colors for tar
