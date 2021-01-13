@@ -115,14 +115,15 @@ get_advanced()
 		--form \
 		"Expert Options\nAdvanced Users Only\nDefault Values used if blank" \
 		0 0 0 \
-		"                    Show Hash (Y/N): " 1 1 "$tHASH "      1 39 6 4 "Show MD5 Hash Integrity Information" \
-		"             Number of Threads (##): " 2 1 "$tTHREADS "   2 39 6 4 "Set processor count to override number of threads" \
-		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD " 3 39 6 4 "Disable LZO Compressibility Testing" \
-		"                   Nice Value (###): " 4 1 "$tNICE "      4 39 6 4 "Set Nice to value ###" \
-		"         Maximum Ram x 100Mb (####): " 5 1 "$tMAXRAM "    5 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
-		"  Memory Window Size x 100Mb (####): " 6 1 "$tWINDOW "    6 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
-		"  Unlimited Ram Use (CAREFUL) (Y/N): " 7 1 "$tUNLIMITED " 7 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
-		"                      Encrypt (Y/N): " 8 1 "$tENCRYPT "   8 39 6 4 "Password protect lrzip file" \
+		"                    Show Hash (Y/N): " 1 1 "$tHASH "         1 39 6 4 "Show MD5 Hash Integrity Information" \
+		"             Number of Threads (##): " 2 1 "$tTHREADS "      2 39 6 4 "Set processor count to override number of threads" \
+		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD "    3 39 6 4 "Disable LZO Compressibility Testing" \
+		"           Threshold Percent (1-99): " 4 1 "$tTHRESHOLDPCT " 4 39 6 4 "Chunk Compressibility Percent" \
+		"                   Nice Value (###): " 5 1 "$tNICE "         5 39 6 4 "Set Nice to value ###" \
+		"         Maximum Ram x 100Mb (####): " 6 1 "$tMAXRAM "       6 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
+		"  Memory Window Size x 100Mb (####): " 7 1 "$tWINDOW "       7 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
+		"  Unlimited Ram Use (CAREFUL) (Y/N): " 8 1 "$tUNLIMITED "    8 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
+		"                      Encrypt (Y/N): " 9 1 "$tENCRYPT "      9 39 6 4 "Password protect lrzip file" \
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator local. No need to revert later.
@@ -151,31 +152,38 @@ get_advanced()
 					THRESHOLD="$RETURN_VAL"
 				fi
 				;;
-			4) tNICE=$TMPVAR
+			4) tTHRESHOLDPCT=$TMPVAR
+				/* Threshold Percent can't have a space since it's an optional value */
+				if [ ${tTHRESHOLDPCT} -ge 1 -a ${tTHRESHOLDPCT} -le 100 ] ; then
+					return_sl_option_value "T$tTHRESHOLDPCT" "--threshold=$tTHRESHOLDPCT"
+					THRESHOLDPCT="$RETURN_VAL"
+				fi
+				;;
+			5) tNICE=$TMPVAR
 				if [ ${#tNICE} -gt 0 ] ; then
 					return_sl_option_value "N $tNICE" "--nice-level=$tNICE"
 					NICE="$RETURN_VAL"
 				fi
 				;;
-			5) tMAXRAM=$TMPVAR
+			6) tMAXRAM=$TMPVAR
 				if [ ${#tMAXRAM} -gt 0 ] ; then
 					return_sl_option_value "m $tMAXRAM" "--maxram=$tMAXRAM"
 					MAXRAM="$RETURN_VAL"
 				fi
 				;;
-			6) tWINDOW=$TMPVAR
+			7) tWINDOW=$TMPVAR
 				if [ ${#tWINDOW} -gt 0 ] ; then
 					return_sl_option_value "w $tWINDOW" "--window=$tWINDOW"
 					WINDOW="$RETURN_VAL"
 				fi
 				;;
-			7) tUNLIMITED=$TMPVAR
+			8) tUNLIMITED=$TMPVAR
 				if [ "$tUNLIMITED" = "Y" -o "$tUNLIMITED" = "y" ] ; then
 					return_sl_option_value "U" "--unlimited"
 					UNLIMITED="$RETURN_VAL"
 				fi
 				;;
-			8) tENCRYPT=$TMPVAR
+			9) tENCRYPT=$TMPVAR
 				if [ "$tENCRYPT" = "Y" -o "$tENCRYPT" = "y" ] ; then
 					return_sl_option_value "e" "--encrypt"
 					ENCRYPT="$RETURN_VAL"
@@ -535,6 +543,7 @@ fillcommandline()
 		[ ! -z $HASH ]		&& COMMANDLINE="$COMMANDLINE $HASH"
 		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE $THREADS"
 		[ ! -z $THRESHOLD ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLD"
+		[ ! -z $THRESHOLDPCT ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLDPCT"
 		[ ! -z $NICE ]		&& COMMANDLINE="$COMMANDLINE $NICE"
 		[ ! -z $MAXRAM ]	&& COMMANDLINE="$COMMANDLINE $MAXRAM"
 		[ ! -z $WINDOW ]	&& COMMANDLINE="$COMMANDLINE $WINDOW"
@@ -604,11 +613,19 @@ fillcommandline()
 				let firsttime=1
 			fi
 		fi
-		if [ ! -z $THRESHOLD ] ; then
+		if [ ! -z "$THRESHOLD" ] ; then
 			if [ $firsttime -eq 1 ] ; then
 				COMMANDLINE="$COMMANDLINE$THRESHOLD"
 			else
 				COMMANDLINE="$COMMANDLINE-$THRESHOLD"
+				let firsttime=1
+			fi
+		fi
+		if [ ! -z "$THRESHOLDPCT" ] ; then
+			if [ $firsttime -eq 1 ] ; then
+				COMMANDLINE="$COMMANDLINE$THRESHOLDPCT"
+			else
+				COMMANDLINE="$COMMANDLINE-$THRESHOLDPCT"
 				let firsttime=1
 			fi
 		fi
@@ -655,10 +672,12 @@ fillcommandline()
 		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z $THRESHOLD ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLD"
+		[ ! -z $THRESHOLDPCT ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLDPCT"
 		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
 		TARCOMMANDLINE="$TARCOMMANDLINE -I 'lrzip "
-		if [ ! -z $METHOD ] ; then
+		if [ ! -z "$METHOD" ] ; then
 			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
 			let firsttime=1
 		fi
@@ -675,6 +694,20 @@ fillcommandline()
 				TCOMMANDLINE="$TCOMMANDLINE$VERBOSITY"
 			else
 				TCOMMANDLINE="$TCOMMANDLINE-$VERBOSITY"
+			fi
+		fi
+		if [ ! -z "$THRESHOLD" ] ; then
+			if [ $firsttime -eq 1 ] ; then
+				TCOMMANDLINE="$TCOMMANDLINE$THRESHOLD"
+			else
+				TCOMMANDLINE="$TCOMMANDLINE-$THRESHOLD"
+			fi
+		fi
+		if [ ! -z "$THRESHOLDPCT" ] ; then
+			if [ $firsttime -eq 1 ] ; then
+				TCOMMANDLINE="$TCOMMANDLINE$THRESHOLDPCT"
+			else
+				TCOMMANDLINE="$TCOMMANDLINE-$THRESHOLDPCT"
 			fi
 		fi
 		[ ! -z "$FILTER" ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
@@ -769,6 +802,7 @@ clear_vars()
 	HASH=
 	THREADS=
 	THRESHOLD=
+	THRESHOLDPCT=
 	NICE=
 	MAXRAM=
 	WINDOW=
@@ -818,6 +852,7 @@ clear_vars()
 	tHASH=
 	tTHREADS=
 	tTHRESHOLD=
+	tTHRESHOLDPCT=
 	tNICE=
 	tMAXRAM=
 	tWINDOW=

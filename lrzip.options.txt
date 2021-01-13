@@ -1,4 +1,4 @@
-lrzip version 0.721beta
+lrzip version 0.7.30
 Copyright (C) Con Kolivas 2006-2016
 Copyright (C) Peter Hyman 2007-2020
 Based on rzip Copyright (C) Andrew Tridgell 1998-2003
@@ -34,7 +34,7 @@ Low level Compression Options:
 	-N, --nice-level value	Set nice value to value (default 19)
 	-m, --maxram size	Set maximum available ram in hundreds of MB
 				overrides detected amount of available ram
-	-T, --threshold		Disable LZO compressibility testing
+	-T, --threshold [limit]	Disable LZO compressibility testing OR set limit to determine compressibiity (1-99)
 	-U, --unlimited		Use unlimited window size beyond ramsize (potentially much slower)
 	-w, --window size	maximum compression window in hundreds of MB
 				default chosen by heuristic dependent on ram and chosen compression
