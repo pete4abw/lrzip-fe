@@ -153,7 +153,7 @@ get_advanced()
 				fi
 				;;
 			4) tTHRESHOLDPCT=$TMPVAR
-				/* Threshold Percent can't have a space since it's an optional value */
+				# Threshold Percent can't have a space since it's an optional value
 				if [ ${tTHRESHOLDPCT} -ge 1 -a ${tTHRESHOLDPCT} -le 100 ] ; then
 					return_sl_option_value "T$tTHRESHOLDPCT" "--threshold=$tTHRESHOLDPCT"
 					THRESHOLDPCT="$RETURN_VAL"
@@ -379,7 +379,59 @@ get_level()
 	elif [ "$LEVEL" = "L 9" -o "$LEVEL" = "--level=9" ] ; then
 		tLEVEL9="on"
 	fi
+}
 
+get_rzip_level()
+{
+	dialog --colors --backtitle "$BCOMMANDLINE" \
+		--title "$PROG: RZIP Compression Level" \
+		--no-tags \
+		--item-help \
+		--radiolist "RZIP Compression Level (Default = Compression Level)" \
+		0 59 0 \
+		--  \
+		"R 1|--rzip-level=1" "Level 1" "$tRZIPLEVEL1" "Set RZIP Compression Level 1" \
+		"R 2|--rzip-level=2" "Level 2" "$tRZIPLEVEL2" "Set RZIP Compression Level 2" \
+		"R 3|--rzip-level=3" "Level 3" "$tRZIPLEVEL3" "Set RZIP Compression Level 3" \
+		"R 4|--rzip-level=4" "Level 4" "$tRZIPLEVEL4" "Set RZIP Compression Level 4" \
+		"R 5|--rzip-level=5" "Level 5" "$tRZIPLEVEL5" "Set RZIP Compression Level 5" \
+		"R 6|--rzip-level=6" "Level 6" "$tRZIPLEVEL6" "Set RZIP Compression Level 6" \
+		"R 7|--rzip-level=7" "Level 7" "$tRZIPLEVEL7" "Set RZIP Compression Level 7" \
+		"R 8|--rzip-level=8" "Level 8" "$tRZIPLEVEL8" "Set RZIP Compression Level 8" \
+		"R 9|--rzip-level=9" "Level 9" "$tRZIPLEVEL9" "Set RZIP Compression Level 9" \
+		2>/tmp/lrlevel.dia
+	check_error
+	return_sl_option "/tmp/lrlevel.dia"
+	RZIPLEVEL=$RETURN_VAL
+	tRZIPLEVEL1="off"
+	tRZIPLEVEL2="off"
+	tRZIPLEVEL3="off"
+	tRZIPLEVEL4="off"
+	tRZIPLEVEL5="off"
+	tRZIPLEVEL6="off"
+	tRZIPLEVEL7="off"
+	tRZIPLEVEL8="off"
+	tRZIPLEVEL9="off"
+
+	if [ "RZIPLEVEL" = "R 1" -o "RZIPLEVEL" = "--rzip-level=1" ] ; then
+		tRZIPLEVEL1="on"
+	elif [ "RZIPLEVEL" = "R 2" -o "RZIPLEVEL" = "--rzip-level=2" ] ; then
+		tRZIPLEVEL2="on"
+	elif [ "RZIPLEVEL" = "R 3" -o "RZIPLEVEL" = "--rzip-level=3" ] ; then
+		tRZIPLEVEL3="on"
+	elif [ "RZIPLEVEL" = "R 4" -o "RZIPLEVEL" = "--rzip-level=4" ] ; then
+		tRZIPLEVEL4="on"
+	elif [ "RZIPLEVEL" = "R 5" -o "RZIPLEVEL" = "--rzip-level=5" ] ; then
+		tRZIPLEVEL5="on"
+	elif [ "RZIPLEVEL" = "R 6" -o "RZIPLEVEL" = "--rzip-level=6" ] ; then
+		tRZIPLEVEL6="on"
+	elif [ "RZIPLEVEL" = "R 7" -o "RZIPLEVEL" = "--rzip-level=7" ] ; then
+		tRZIPLEVEL7="on"
+	elif [ "RZIPLEVEL" = "R 8" -o "RZIPLEVEL" = "--rzip-level=8" ] ; then
+		tRZIPLEVEL8="on"
+	elif [ "RZIPLEVEL" = "R 9" -o "RZIPLEVEL" = "--rzip-level=9" ] ; then
+		tRZIPLEVEL9="on"
+	fi
 }
 
 get_method()
@@ -531,6 +583,7 @@ fillcommandline()
 		[ ! -z $LMODE ]		&& COMMANDLINE="$COMMANDLINE $LMODE"
 		[ ! -z $METHOD ]	&& COMMANDLINE="$COMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& COMMANDLINE="$COMMANDLINE $LEVEL"
+		[ ! -z $RZIPLEVEL ]	&& COMMANDLINE="$COMMANDLINE $RZIPLEVEL"
 		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
 		[ ! -z "$VERBOSITY" ]	&& COMMANDLINE="$COMMANDLINE $VERBOSITY"
@@ -621,14 +674,6 @@ fillcommandline()
 				let firsttime=1
 			fi
 		fi
-		if [ ! -z "$THRESHOLDPCT" ] ; then
-			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE="$COMMANDLINE$THRESHOLDPCT"
-			else
-				COMMANDLINE="$COMMANDLINE-$THRESHOLDPCT"
-				let firsttime=1
-			fi
-		fi
 		if [ ! -z $ENCRYPT ] ; then
 			if [ $firsttime -eq 1 ] ; then
 				COMMANDLINE="$COMMANDLINE$ENCRYPT"
@@ -638,6 +683,7 @@ fillcommandline()
 			fi
 		fi
 		[ ! -z "$LEVEL" ]	&& COMMANDLINE="$COMMANDLINE -$LEVEL"
+		[ ! -z "$RZIPLEVEL" ]	&& COMMANDLINE="$COMMANDLINE -$RZIPLEVEL"
 		[ ! -z "$OUTDIR" ]	&& COMMANDLINE="$COMMANDLINE -$OUTDIR"
 		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE -$OUTNAME"
 		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
@@ -647,6 +693,7 @@ fillcommandline()
 		[ ! -z "$NICE" ]	&& COMMANDLINE="$COMMANDLINE -$NICE"
 		[ ! -z "$MAXRAM" ]	&& COMMANDLINE="$COMMANDLINE -$MAXRAM"
 		[ ! -z "$WINDOW" ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
+		[ ! -z "$THRESHOLDPCT" ] && COMMANDLINE="$COMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILE" ]	&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
 
@@ -670,24 +717,17 @@ fillcommandline()
 		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program='lrzip"
 		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
-		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
-		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z $RZIPLEVEL ]	&& TCOMMANDLINE="$TCOMMANDLINE $RZIPLEVEL"
 		[ ! -z $THRESHOLD ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLD"
 		[ ! -z $THRESHOLDPCT ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLDPCT"
+		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
+		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
 		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
 		TARCOMMANDLINE="$TARCOMMANDLINE -I 'lrzip "
 		if [ ! -z "$METHOD" ] ; then
 			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
 			let firsttime=1
-		fi
-		if [ ! -z "$LEVEL" ] ; then
-			if [ $firsttime -eq 1 ] ; then
-				TCOMMANDLINE="$TCOMMANDLINE$LEVEL"
-			else
-				TCOMMANDLINE="$TCOMMANDLINE-$LEVEL"
-				let firsttime=1
-			fi
 		fi
 		if [ "$VERBOSITY" = "P" ] ; then
 			if [ $firsttime -eq 1 ] ; then
@@ -703,15 +743,12 @@ fillcommandline()
 				TCOMMANDLINE="$TCOMMANDLINE-$THRESHOLD"
 			fi
 		fi
-		if [ ! -z "$THRESHOLDPCT" ] ; then
-			if [ $firsttime -eq 1 ] ; then
-				TCOMMANDLINE="$TCOMMANDLINE$THRESHOLDPCT"
-			else
-				TCOMMANDLINE="$TCOMMANDLINE-$THRESHOLDPCT"
-			fi
-		fi
-		[ ! -z "$FILTER" ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
-		[ ! -z "$DELTA" ]	&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+
+		[ ! -z "$LEVEL" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$LEVEL"
+		[ ! -z "$RZIPLEVEL" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$RZIPLEVEL"
+		[ ! -z "$THRESHOLDPCT" ]	&& TCOMMANDLINE="$TCOMMANDLINE -$THRESHOLDPCT"
+		[ ! -z "$FILTER" ]		&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
+		[ ! -z "$DELTA" ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
 	fi
 	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE'"
 
@@ -789,6 +826,7 @@ clear_vars()
 	LMODE=
 	METHOD=
 	LEVEL=
+	RZIPLEVEL=
 	FILTER=
 	DELTA=
 	VERBOSITY=
@@ -831,6 +869,15 @@ clear_vars()
 	tLEVEL7="on"
 	tLEVEL8="off"
 	tLEVEL9="off"
+	tRZIPLEVEL1="off"
+	tRZIPLEVEL2="off"
+	tRZIPLEVEL3="off"
+	tRZIPLEVEL4="off"
+	tRZIPLEVEL5="off"
+	tRZIPLEVEL6="off"
+	tRZIPLEVEL7="off"
+	tRZIPLEVEL8="off"
+	tRZIPLEVEL9="off"
 	tx86="off"
 	tARM="off"
 	tARMT="off"
@@ -936,6 +983,7 @@ elif [ -z $LMODE ]; then
 			"FILE"			"File or Directory to Compress" \
 			"METHOD"		"Compression Method" \
 			"LEVEL"			"Compression Level" \
+			"RZIP LEVEL"		"RZIP Pre-Compression Level" \
 			"FILTER"		"Pre-Compression Filter" \
 			"VERBOSITY"		"Verbose Options" \
 			"FILE HANDLING"		"Keep, Delete, Overwrite Files" \
@@ -956,6 +1004,8 @@ elif [ -z $LMODE ]; then
 			get_method
 		elif [ "$MENU" = "LEVEL" ] ; then
 			get_level
+		elif [ "$MENU" = "RZIP LEVEL" ] ; then
+			get_rzip_level
 		elif [ "$MENU" = "FILTER" ] ; then
 			get_filter
 		elif [ "$MENU" = "VERBOSITY" ] ; then
