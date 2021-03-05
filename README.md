@@ -5,7 +5,7 @@ Output: A command line you can cut and paste and use
 
 ## About
 
-Since working on lrzip for the past dozen or so years, a goal has
+Since working on lrzip since 2007, a goal has
 always been to come up with a usable front-end for it.
 
 As options grew, so did complexity. At first I came up with the
@@ -30,9 +30,15 @@ under the hood.
 
 ## Thus, lrzip-fe
 
-Version 0.7x of **lrzip** has 39 options. Some are mutually
+Version 0.7x of **lrzip-next** has 39 options. Some are mutually
 exclusive, (such as `-O and -o`), other can be combined, but only
 in some modes. (see file `lrzip.options.txt`)
+
+A note on **lrzip** and **lrzip-next**  
+`lrzip-fe` was designed for use with `lrzip-next`, however, it
+can be used with the main branch of lrzip as well. Just don't use
+options that are not available for it. At startup, it will look
+for both programs with priority for lrzip-next.
 
 lrzip-fe.sh now has the ability to present short or long options
 for lrzip. Some options, such as FILTERING, only have long
@@ -107,4 +113,4 @@ Your comments and contributions are welcome.
 October 2020  
 Peter Hyman, pete@peterhyman.com  
 https://github.com/pete4abw/lrzip-fe  
-https://github.com/pete4abw/lrzip  
+https://github.com/pete4abw/lrzip-next  

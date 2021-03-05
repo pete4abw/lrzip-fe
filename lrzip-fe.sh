@@ -8,17 +8,25 @@
 # just attribution appreciated
 
 # Second release version
-VERSION=0.21
+VERSION=0.22
 
 # is lrzip even here?
-if [ ! -x $(which lrzip) ] ; then
-	echo "ERROR: lrzip program not found!"
-	exit -1
+for i in lrzip-next lrzip
+do
+	if [ -x $(which $i) ] ; then
+		LRZ=$i
+		break;
+	fi
+done
+
+if [ -z "$LRZ" ] ; then
+	echo "lrzip-next or lrzip not found...Cannot continue!"
+	exit 1
 fi
 
 # store help file
 LRZIPHELPFILE=/tmp/lrzip.help
-lrzip -h >$LRZIPHELPFILE 2>&1
+$LRZ -h >$LRZIPHELPFILE 2>&1
 
 # Some constants
 DIALOG_OK=0
@@ -109,7 +117,7 @@ return_sl_option_value()
 get_advanced()
 {
 	dialog --colors --backtitle "$BCOMMANDLINE" \
-		--title "$PROG: Advanced lrzip options" \
+		--title "$PROG: Advanced $LRZ options" \
 		--cr-wrap \
 		--item-help \
 		--form \
@@ -123,7 +131,7 @@ get_advanced()
 		"         Maximum Ram x 100Mb (####): " 6 1 "$tMAXRAM "       6 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
 		"  Memory Window Size x 100Mb (####): " 7 1 "$tWINDOW "       7 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
 		"  Unlimited Ram Use (CAREFUL) (Y/N): " 8 1 "$tUNLIMITED "    8 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
-		"                      Encrypt (Y/N): " 9 1 "$tENCRYPT "      9 39 6 4 "Password protect lrzip file" \
+		"                      Encrypt (Y/N): " 9 1 "$tENCRYPT "      9 39 6 4 "Password protect $LRZ file" \
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator local. No need to revert later.
@@ -231,7 +239,7 @@ get_file_handling()
 		--  \
 		"f|--force" "Force Overwrite" "$tFORCE" "Overwrite output file" \
 		"D|--delete" "Delete Source File after work" "$tDELETE" "Delete input file after compression/decompression" \
-		"K|--keep-broken" "Keep broken output file" "$tKEEP" "Keep broken file if lrzip is interrupted or other error" \
+		"K|--keep-broken" "Keep broken output file" "$tKEEP" "Keep broken file if $LRZ is interrupted or other error" \
 		2>/tmp/lfilehandling.dia
 	check_error
 
@@ -548,8 +556,8 @@ get_verbosity()
 		--radiolist "Verbosity" \
 		0 0 0 \
 		-- \
-		"v|--verbose" "Verbose" "$tVERBOSE" "Show lrzip settings and progress prior to compression/decompression" \
-		"vv|--verbose --verbose" "Maximum Verbosity" "$tMAXVERBOSE" "Show compression/decompression/extra info on lrzip execugtion in addition to -v option" \
+		"v|--verbose" "Verbose" "$tVERBOSE" "Show $LRZ settings and progress prior to compression/decompression" \
+		"vv|--verbose --verbose" "Maximum Verbosity" "$tMAXVERBOSE" "Show compression/decompression/extra info on $LRZ execugtion in addition to -v option" \
 		"P|--progress" "Show Progress" "$tPROGRESS" "Only show progress, no other verbose options on compression/decompression" \
 		"q|--quiet" "Silent. Show no progress" "$tQUIET" "Be quiet and show nothing on compression/decompression" \
 		2>/tmp/lverbosity.dia
@@ -577,7 +585,7 @@ get_verbosity()
 
 fillcommandline()
 {
-	COMMANDLINE="lrzip"
+	COMMANDLINE="$LRZ"
 	local firsttime=
 	if [ "$SHORTLONG" = "LONG" ]; then
 		[ ! -z $LMODE ]		&& COMMANDLINE="$COMMANDLINE $LMODE"
@@ -714,7 +722,7 @@ fillcommandline()
 	TARCOMMANDLINE="tar"
 	let firsttime=0
 	if [ "$SHORTLONG" = "LONG" ]; then
-		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program='lrzip"
+		TARCOMMANDLINE="$TARCOMMANDLINE --use-compress-program='$LRZ"
 		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
 		[ ! -z $RZIPLEVEL ]	&& TCOMMANDLINE="$TCOMMANDLINE $RZIPLEVEL"
@@ -724,7 +732,7 @@ fillcommandline()
 		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
 		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
-		TARCOMMANDLINE="$TARCOMMANDLINE -I 'lrzip "
+		TARCOMMANDLINE="$TARCOMMANDLINE -I '$LRZ "
 		if [ ! -z "$METHOD" ] ; then
 			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
 			let firsttime=1
@@ -807,13 +815,13 @@ fillcommandline()
 
 run_lrzip()
 {
-	dialog --title "Executing lrzip" \
+	dialog --title "Executing $LRZ" \
 		--prgbox "$COMMANDLINE" "$COMMANDLINE" $height $width
 }
 
 run_tar_lrzip()
 {
-	dialog --title "Executing tar and lrzip" \
+	dialog --title "Executing tar and $LRZ" \
 		--prgbox "$TARCOMMANDLINE" "$TARCOMMANDLINE" $height $width
 }
 
@@ -930,13 +938,13 @@ dialog	--backtitle "Current Directory is: $PWD" \
 	--title "Welcome to $PROG - Version: $VERSION" \
 	--no-tags \
 	--extra-button --extra-label "Toggle $LOCALSL Commands" \
-	--ok-label "Select lrzip Mode" \
+	--ok-label "Select $LRZ Mode" \
 	--scrollbar \
 	--hline "Press F1 for HELP" \
 	--hfile "$LRZIPHELPFILE" \
 	--exit-label "Close Help" \
-	--menu "Copyright 2020 Peter Hyman\nA front-end for lrzip\n\
-Choose an lrzip Action" \
+	--menu "Copyright 2020 Peter Hyman\nA front-end for $LRZ\n\
+Choose an $LRZ Action" \
 	0 0 0 \
 	"" "Compress a file" \
 	"d|--decompress" "Decompress a file"  \
@@ -1130,6 +1138,6 @@ fi
 done # main outer loop
 
 # Finish up by displaying the command
-show_command "lrzip command line options have been set/executed as follows" 0
+show_command "$LRZ command line options have been set/executed as follows" 0
 
 #program ends from show_command()
