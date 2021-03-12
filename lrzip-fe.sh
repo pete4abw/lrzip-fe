@@ -25,7 +25,7 @@ if [ -z "$LRZ" ] ; then
 fi
 
 # store help file
-LRZIPHELPFILE=/tmp/lrzip.help
+LRZIPHELPFILE=/tmp/$LRZ.help
 $LRZ -h >$LRZIPHELPFILE 2>&1
 
 # Some constants
@@ -59,6 +59,14 @@ fi
 # $1 = message to show
 # $2 = error code
 # this ends program
+remove_tempfiles() {
+	local i
+	for i in $(ls /tmp/l*.dia)
+	do
+		rm -f "$i" 2>/dev/null
+	done
+}
+
 show_command()
 {
 	# Format height and width based on length of commands and messages and exit mode
@@ -78,6 +86,10 @@ show_command()
 
 	dialog --infobox \
 		"$1:\n\n$COMMANDLINE\n$TARCOMMANDLINE" $BOXHEIGHT $COMMANDLINELEN
+
+	# file cleanup
+	remove_tempfiles
+
 	exit $2
 }
 
@@ -1109,10 +1121,10 @@ elif [ "$LMODE" = "--test" -o "$LMODE" = "--info" -o "$LMODE" = "t" -o "$LMODE" 
 			"RUN COMMAND"	"Run LRZIP Compression Program" \
 			"RUN TAR COMMAND" "Run LRZIP Compression under TAR Program" \
 			"EXIT"		"Done. Show Output" \
-			2>/tmp/lrzip.dia
+			2>/tmp/lrzipfe.dia
 		check_error
 		[ $RETCODE -eq $DIALOG_EXTRA ] && break
-	MENU=$(</tmp/lrzip.dia)
+	MENU=$(</tmp/lrzipfe.dia)
 
 		if [ "$MENU" = "FILE" ] ; then
 			get_file

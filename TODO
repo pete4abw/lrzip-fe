@@ -1,3 +1,5 @@
+Set Prompting for Encrypt options. Insecure, but can use *** input
+
 Add lrzip execution (done)
 Add tar embedding (tar -I "lrzip ....." -cf file.tar.lrz) (done)
 
