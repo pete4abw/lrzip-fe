@@ -8,7 +8,7 @@
 # just attribution appreciated
 
 # Second release version
-VERSION=0.22
+VERSION=0.23
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -135,11 +135,11 @@ get_advanced()
 		--form \
 		"Expert Options\nAdvanced Users Only\nDefault Values used if blank" \
 		0 0 0 \
-		"                    Show Hash (Y/N): " 1 1 "$tHASH "         1 39 6 4 "Show MD5 Hash Integrity Information" \
+		"                    Show Hash (Y/N): " 1 1 "$tHASH "         1 39 2 2 "Show MD5 Hash Integrity Information (N)" \
 		"             Number of Threads (##): " 2 1 "$tTHREADS "      2 39 6 4 "Set processor count to override number of threads" \
-		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD "    3 39 6 4 "Disable LZO Compressibility Testing" \
-		"           Threshold Percent (1-99): " 4 1 "$tTHRESHOLDPCT " 4 39 6 4 "Chunk Compressibility Percent" \
-		"                   Nice Value (###): " 5 1 "$tNICE "         5 39 6 4 "Set Nice to value ###" \
+		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD "    3 39 6 4 "Disable LZ4 Compressibility Testing (N)" \
+		"           Threshold Percent (1-99): " 4 1 "$tTHRESHOLDPCT " 4 39 6 4 "Chunk Compressibility Percent (100)" \
+		"                   Nice Value (###): " 5 1 "$tNICE "         5 39 6 4 "Set Nice to value ### (19)" \
 		"         Maximum Ram x 100Mb (####): " 6 1 "$tMAXRAM "       6 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
 		"  Memory Window Size x 100Mb (####): " 7 1 "$tWINDOW "       7 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
 		"  Unlimited Ram Use (CAREFUL) (Y/N): " 8 1 "$tUNLIMITED "    8 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
@@ -1009,8 +1009,8 @@ elif [ -z $LMODE ]; then
 			"FILE HANDLING"		"Keep, Delete, Overwrite Files" \
 			"OUTPUT"		"Output Options" \
 			"ADVANCED"		"Advanced Compression Options" \
-			"RUN COMMAND"		"Run LRZIP Compression Program" \
-			"RUN TAR COMMAND"	"Run LRZIP Compression under TAR Program" \
+			"RUN COMMAND"		"Run $LRZ Compression Program" \
+			"RUN TAR COMMAND"	"Run $LRZ Compression under TAR Program" \
 			"EXIT"			"Exit without running. Show Command Output" \
 			2>/tmp/lrzip.dia
 		check_error
@@ -1069,8 +1069,8 @@ elif [ "$LMODE" = "--decompress" -o "$LMODE" = "d" ] ; then
 			"VERBOSITY"	"Verbose Options" \
 			"FILE HANDLING" "Keep, Delete, Overwrite Files" \
 			"OUTPUT"	"Output Options" \
-			"RUN COMMAND"	"Run LRZIP Decompression Program" \
-			"RUN TAR COMMAND" "Run LRZIP Decompression under TAR Program" \
+			"RUN COMMAND"	"Run $LRZ Decompression Program" \
+			"RUN TAR COMMAND" "Run $LRZ Decompression under TAR Program" \
 			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzip.dia
 		check_error
@@ -1118,8 +1118,8 @@ elif [ "$LMODE" = "--test" -o "$LMODE" = "--info" -o "$LMODE" = "t" -o "$LMODE" 
 			0 0 0 \
 			"FILE"		"File to Decompress" \
 			"VERBOSITY"	"Verbose Options" \
-			"RUN COMMAND"	"Run LRZIP Compression Program" \
-			"RUN TAR COMMAND" "Run LRZIP Compression under TAR Program" \
+			"RUN COMMAND"	"Run $LRZ Compression Program" \
+			"RUN TAR COMMAND" "Run $LRZ Compression under TAR Program" \
 			"EXIT"		"Done. Show Output" \
 			2>/tmp/lrzipfe.dia
 		check_error
