@@ -1,14 +1,14 @@
 #!/bin/sh
 
 # lrzip dialog front end
-# based on lrzip 0.7x+
+# based on lrzip 0.9x+
 # Peter Hyman, pete@peterhyman.com
 # Placed in the public domain
 # no warranties, restrictions
 # just attribution appreciated
 
-# Second release version
-VERSION=0.23
+# Third release version
+VERSION=0.30
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -135,15 +135,17 @@ get_advanced()
 		--form \
 		"Expert Options\nAdvanced Users Only\nDefault Values used if blank" \
 		0 0 0 \
-		"                    Show Hash (Y/N): " 1 1 "$tHASH "         1 39 2 2 "Show MD5 Hash Integrity Information (N)" \
-		"             Number of Threads (##): " 2 1 "$tTHREADS "      2 39 6 4 "Set processor count to override number of threads" \
-		"    Disable Threshold Testing (Y/N): " 3 1 "$tTHRESHOLD "    3 39 6 4 "Disable LZ4 Compressibility Testing (N)" \
-		"           Threshold Percent (1-99): " 4 1 "$tTHRESHOLDPCT " 4 39 6 4 "Chunk Compressibility Percent (100)" \
-		"                   Nice Value (###): " 5 1 "$tNICE "         5 39 6 4 "Set Nice to value ### (19)" \
-		"         Maximum Ram x 100Mb (####): " 6 1 "$tMAXRAM "       6 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
-		"  Memory Window Size x 100Mb (####): " 7 1 "$tWINDOW "       7 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
-		"  Unlimited Ram Use (CAREFUL) (Y/N): " 8 1 "$tUNLIMITED "    8 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
-		"                      Encrypt (Y/N): " 9 1 "$tENCRYPT "      9 39 6 4 "Password protect $LRZ file" \
+		"                    Show Hash (Y/N): "  1 1 "$tHASH "         1 39 2 2 "Show Hash Integrity Information (N)" \
+		"                 Hash Method (1-13): "  2 1 "$tHASHMETHOD "   2 39 2 4 "1=MD5, 2=RIPEMD, 3=SHA256, 4=SHA384, 5=SHA512, 6=SHA3_256, 7=SHA3_512, 8=SHAKE128_16, 9=SHAKE128_32, 10=SHAKE128_64, 11=SHAKE256_16, 12=SHAKE256_32, 13=SHAKE256_64" \
+		"             Number of Threads (##): "  3 1 "$tTHREADS "      3 39 6 4 "Set processor count to override number of threads" \
+		"    Disable Threshold Testing (Y/N): "  4 1 "$tTHRESHOLD "    4 39 6 4 "Disable LZ4 Compressibility Testing (N)" \
+		"           Threshold Percent (1-99): "  5 1 "$tTHRESHOLDPCT " 5 39 6 4 "Chunk Compressibility Percent (100)" \
+		"                   Nice Value (###): "  6 1 "$tNICE "         6 39 6 4 "Set Nice to value ### (19)" \
+		"         Maximum Ram x 100Mb (####): "  7 1 "$tMAXRAM "       7 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
+		"  Memory Window Size x 100Mb (####): "  8 1 "$tWINDOW "       8 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
+		"  Unlimited Ram Use (CAREFUL) (Y/N): "  9 1 "$tUNLIMITED "    9 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
+		"                      Encrypt (Y/N): " 10 1 "$tENCRYPT "     10 39 6 4 "Prompt for a Password to protect $LRZ file" \
+		"            Encryption Method (1-2): " 11 1 "$tEMETHOD "     11 39 6 4 "Password Method: 1 = AES-128 (default), 2= AES-256"\
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator local. No need to revert later.
@@ -160,53 +162,65 @@ get_advanced()
 					HASH="$RETURN_VAL"
 				fi
 				;;
-			2) tTHREADS=$TMPVAR
+			2) tHASHMETHOD=$TMPVAR
+				if [ ${#tHASHMETHOD} -gt 0 ] ; then
+					return_sl_option_value "H$tHASHMETHOD" "--hash=$tHASHMETHOD"
+					HASH=$RETURN_VAL
+				fi
+				;;
+			3) tTHREADS=$TMPVAR
 				if [ ${#tTHREADS} -gt 0 ] ; then
 					return_sl_option_value "p $tTHREADS" "--threads=$tTHREADS"
 					THREADS="$RETURN_VAL"
 				fi
 				;;
-			3) tTHRESHOLD=$TMPVAR
+			4) tTHRESHOLD=$TMPVAR
 				if [ "$tTHRESHOLD" = "Y" -o "$tTHRESHOLD" = "y" ] ; then
 					return_sl_option_value "T" "--threshold"
 					THRESHOLD="$RETURN_VAL"
 				fi
 				;;
-			4) tTHRESHOLDPCT=$TMPVAR
+			5) tTHRESHOLDPCT=$TMPVAR
 				# Threshold Percent can't have a space since it's an optional value
 				if [ ${tTHRESHOLDPCT} -ge 1 -a ${tTHRESHOLDPCT} -le 100 ] ; then
 					return_sl_option_value "T$tTHRESHOLDPCT" "--threshold=$tTHRESHOLDPCT"
 					THRESHOLDPCT="$RETURN_VAL"
 				fi
 				;;
-			5) tNICE=$TMPVAR
+			6) tNICE=$TMPVAR
 				if [ ${#tNICE} -gt 0 ] ; then
 					return_sl_option_value "N $tNICE" "--nice-level=$tNICE"
 					NICE="$RETURN_VAL"
 				fi
 				;;
-			6) tMAXRAM=$TMPVAR
+			7) tMAXRAM=$TMPVAR
 				if [ ${#tMAXRAM} -gt 0 ] ; then
 					return_sl_option_value "m $tMAXRAM" "--maxram=$tMAXRAM"
 					MAXRAM="$RETURN_VAL"
 				fi
 				;;
-			7) tWINDOW=$TMPVAR
+			8) tWINDOW=$TMPVAR
 				if [ ${#tWINDOW} -gt 0 ] ; then
 					return_sl_option_value "w $tWINDOW" "--window=$tWINDOW"
 					WINDOW="$RETURN_VAL"
 				fi
 				;;
-			8) tUNLIMITED=$TMPVAR
+			9) tUNLIMITED=$TMPVAR
 				if [ "$tUNLIMITED" = "Y" -o "$tUNLIMITED" = "y" ] ; then
 					return_sl_option_value "U" "--unlimited"
 					UNLIMITED="$RETURN_VAL"
 				fi
 				;;
-			9) tENCRYPT=$TMPVAR
+			10) tENCRYPT=$TMPVAR
 				if [ "$tENCRYPT" = "Y" -o "$tENCRYPT" = "y" ] ; then
 					return_sl_option_value "e" "--encrypt"
 					ENCRYPT="$RETURN_VAL"
+				fi
+				;;
+			11) tEMETHOD=$TMPVAR
+				if [ ${#tEMETHOD} -gt 0 ] ; then
+					return_sl_option_value "E $tEMETHOD" "--emethod=$tEMETHOD"
+					EMETHOD=$RETURN_VAL
 				fi
 				;;
 			*)
@@ -465,6 +479,7 @@ get_method()
 		-- \
 		"|--lzma" "lzma (default)" "$tLZMA" "Default LZMA Compression" \
 		"b|--bzip" "bzip" "$tBZIP" "BZIP2 Compression" \
+		"B|--bzip3" "bzip3" "$tBZIP3" "BZIP3 Compression" \
 		"g|--gzip" "gzip" "$tGZIP" "GZIP Compression" \
 		"l|--lzo" "lzo" "$tLZO" "LZO Compression" \
 		"n|--rzip" "rzip" "$tRZIP" "Do NOT Compress. Just pre-process using RZIP (Fastest)." \
@@ -476,6 +491,7 @@ get_method()
 
 	tLZMA="off"
 	tBZIP="off"
+	tBZIP3="off"
 	tGZIP="off"
 	tLZO="off"
 	tRZIP="off"
@@ -485,6 +501,8 @@ get_method()
 		tLZMA="on"
 	elif [ $METHOD = "--bzip" -o $METHOD = "b" ] ; then
 		tBZIP="on"
+	elif [ $METHOD = "--bzip3" -o $METHOD = "B" ] ; then
+		tBZIP3="on"
 	elif [ $METHOD = "--gzip" -o $METHOD = "g" ] ; then
 		tGZIP="on"
 	elif [ $METHOD = "--lzo" -o $METHOD = "l" ] ; then
@@ -620,6 +638,7 @@ fillcommandline()
 		[ ! -z $WINDOW ]	&& COMMANDLINE="$COMMANDLINE $WINDOW"
 		[ ! -z $UNLIMITED ]	&& COMMANDLINE="$COMMANDLINE $UNLIMITED"
 		[ ! -z $ENCRYPT ]	&& COMMANDLINE="$COMMANDLINE $ENCRYPT"
+		[ ! -z $EMETHOD ]	&& COMMANDLINE="$COMMANDLINE $EMETHOD"
 		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
 		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
@@ -670,14 +689,6 @@ fillcommandline()
 				let firsttime=1
 			fi
 		fi
-		if [ ! -z $HASH ] ; then
-			if [ $firsttime -eq 1 ] ; then
-				COMMANDLINE="$COMMANDLINE$HASH"
-			else
-				COMMANDLINE="$COMMANDLINE-$HASH"
-				let firsttime=1
-			fi
-		fi
 		if [ ! -z $UNLIMITED ] ; then
 			if [ $firsttime -eq 1 ] ; then
 				COMMANDLINE="$COMMANDLINE$UNLIMITED"
@@ -714,6 +725,8 @@ fillcommandline()
 		[ ! -z "$THRESHOLDPCT" ] && COMMANDLINE="$COMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILTER" ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
 		[ ! -z "$DELTA" ]	&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z "$HASH" ]	&& COMMANDLINE="$COMMANDLINE -$HASH"
+		[ ! -z "$EMETHOD" ]	&& COMMANDLINE="$COMMANDLINE -$EMETHOD"
 		[ ! -z "$FILE" ]	&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
 
@@ -738,6 +751,7 @@ fillcommandline()
 		[ ! -z $METHOD ]	&& TCOMMANDLINE="$TCOMMANDLINE $METHOD"
 		[ ! -z $LEVEL ]		&& TCOMMANDLINE="$TCOMMANDLINE $LEVEL"
 		[ ! -z $RZIPLEVEL ]	&& TCOMMANDLINE="$TCOMMANDLINE $RZIPLEVEL"
+		[ ! -z $HASH ]		&& TCOMMANDLINE="$TCOMMANDLINE $HASH"
 		[ ! -z $THRESHOLD ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLD"
 		[ ! -z $THRESHOLDPCT ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLDPCT"
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
@@ -866,6 +880,7 @@ clear_vars()
 	WINDOW=
 	UNLIITED=
 	ENCRYPT=
+	EMETHOD=
 	RETURN_VAL=
 	COMMANDLINE=
 	TARCOMMANDLINE=
@@ -876,6 +891,7 @@ clear_vars()
 	tFILE=
 	tLZMA="on"
 	tBZIP="off"
+	tBZIP3="off"
 	tGZIP="off"
 	tLZO="off"
 	tRZIP="off"
@@ -925,6 +941,7 @@ clear_vars()
 	tWINDOW=
 	tUNLIMITED=
 	tENCRYPT=
+	tEMETHOD=
 }
 
 # Main program starts here

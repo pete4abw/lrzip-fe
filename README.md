@@ -2,6 +2,7 @@
 
 usage: `lrzip-fe.sh`  
 Output: A command line you can cut and paste and use
+Run: lrzip/lrzip-next can be run from inside the program
 
 ## About
 
@@ -12,7 +13,7 @@ As options grew, so did complexity. At first I came up with the
 idea of a configuration file that would be loaded with pre-set
 options at run-time. This proved very useful to those who
 discovered it! But many users do not use a configuration file for
-lrzip.
+lrzip/lrzip-next.
 
 lrzip-fe presents a series of cascading menus and choices to help
 users fully explore the capabilities of:
@@ -25,12 +26,12 @@ users fully explore the capabilities of:
 
 ![Main lrzip-fe.sh screen](screenshots/01-main-screen.jpg)
 
-Thats's really all there is to lrzip -- that is until you peek
+Thats's really all there is to lrzip/lrzip-next -- that is until you peek
 under the hood.
 
 ## Thus, lrzip-fe
 
-Version 0.7x of **lrzip-next** has 39 options. Some are mutually
+Version 0.9x of **lrzip-next** has 46 options. Some are mutually
 exclusive, (such as `-O and -o`), other can be combined, but only
 in some modes. (see file `lrzip.options.txt`)
 
@@ -90,11 +91,11 @@ will have the extension `.tar.lrz`
 
 ## Usage Examples
 
-If `lrzip` is not run using the **RUN COMMAND** or **RUN TAR
+If `lrzip-next` is not run using the **RUN COMMAND** or **RUN TAR
 COMMAND** options, a command has been constructed with
-`lrzip-fe.sh`, `lrzip` can be executed one of three ways.
-1. just cut and paste the `lrzip command`
-2. prepend the `lrzip command` with `LRZIP=NOCONFIG` to ignore
+`lrzip-fe.sh`, `lrzip-next` can be executed one of three ways.
+1. just cut and paste the `lrzip-next command`
+2. prepend the `lrzip-next command` with `LRZIP=NOCONFIG` to ignore
    any preset options in `lrzip.conf`
 3. cut and paste the `tar` command
 
@@ -108,9 +109,15 @@ sections of a menu. **Cursor** keys moves between choices
 **SPACE** selects an item within a **checkbox** or **radiolist**.
 There may be some other quirks about selection.
 
+## Acknowledgements
+Con Kolivas **lrzip**
+Thomas Dickey **dialog**
+Andrew Tridgell **rzip**
+
 Your comments and contributions are welcome.
 
 October 2020  
+December 2022  
 Peter Hyman, pete@peterhyman.com  
 https://github.com/pete4abw/lrzip-fe  
 https://github.com/pete4abw/lrzip-next  
