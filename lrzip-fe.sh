@@ -126,6 +126,30 @@ return_sl_option_value()
 	fi
 }
 
+get_comment()
+{
+	dialog --colors --backtitle "$BCOMMANDLINE" \
+		--title "$PROG: $LRZ Comment" \
+		--cr-wrap \
+		--item-help \
+		--form \
+		"Input plain text Comment for lrz file. 64 char max." \
+		0 0 0 \
+		"Comment: "	1 1 "$tCOMMENT "	1 11 65 64 "Comment for LRZ file" \
+		2>/tmp/lcomment.dia
+	check_error
+	local IFS=$'\xA'
+	TMPVAR=$(</tmp/lcomment.dia)
+	TMPVAR="${TMPVAR/% /}"		# clear trailing spaces
+	TMPVAR="${TMPVAR// /\\ }"	# escape spaces
+	if [ ${#TMPVAR} -gt 0 ] ; then
+		return_sl_option_value "C $TMPVAR" "--comment=$TMPVAR"
+		COMMENT=$RETURN_VAL
+	else
+		COMMENT=
+	fi
+}
+
 get_advanced()
 {
 	dialog --colors --backtitle "$BCOMMANDLINE" \
@@ -641,6 +665,7 @@ fillcommandline()
 		[ ! -z $EMETHOD ]	&& COMMANDLINE="$COMMANDLINE $EMETHOD"
 		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z "$COMMENT" ]	&& COMMANDLINE="$COMMANDLINE $COMMENT"
 		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
 	else
 		COMMANDLINE="$COMMANDLINE "
@@ -727,6 +752,7 @@ fillcommandline()
 		[ ! -z "$DELTA" ]	&& COMMANDLINE="$COMMANDLINE$DELTA"
 		[ ! -z "$HASH" ]	&& COMMANDLINE="$COMMANDLINE -$HASH"
 		[ ! -z "$EMETHOD" ]	&& COMMANDLINE="$COMMANDLINE -$EMETHOD"
+		[ ! -z "$COMMENT" ]	&& COMMANDLINE="$COMMANDLINE -$COMMENT"
 		[ ! -z "$FILE" ]	&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
 
@@ -756,6 +782,7 @@ fillcommandline()
 		[ ! -z $THRESHOLDPCT ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLDPCT"
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z "$COMMENT" ]	&& TCOMMANDLINE="$TCOMMANDLINE $COMMENT"
 		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
 		TARCOMMANDLINE="$TARCOMMANDLINE -I '$LRZ "
@@ -783,6 +810,7 @@ fillcommandline()
 		[ ! -z "$THRESHOLDPCT" ]	&& TCOMMANDLINE="$TCOMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILTER" ]		&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z "$DELTA" ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z "$COMMENT" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$COMMENT"
 	fi
 	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE'"
 
@@ -881,6 +909,7 @@ clear_vars()
 	UNLIITED=
 	ENCRYPT=
 	EMETHOD=
+	COMMENT=
 	RETURN_VAL=
 	COMMANDLINE=
 	TARCOMMANDLINE=
@@ -942,6 +971,7 @@ clear_vars()
 	tUNLIMITED=
 	tENCRYPT=
 	tEMETHOD=
+	tCOMMENT=
 }
 
 # Main program starts here
@@ -1025,6 +1055,7 @@ elif [ -z $LMODE ]; then
 			"VERBOSITY"		"Verbose Options" \
 			"FILE HANDLING"		"Keep, Delete, Overwrite Files" \
 			"OUTPUT"		"Output Options" \
+			"ARCHIVE COMMENT"	"Add a plain text Comment for Archive" \
 			"ADVANCED"		"Advanced Compression Options" \
 			"RUN COMMAND"		"Run $LRZ Compression Program" \
 			"RUN TAR COMMAND"	"Run $LRZ Compression under TAR Program" \
@@ -1051,6 +1082,8 @@ elif [ -z $LMODE ]; then
 			get_file_handling
 		elif [ "$MENU" = "OUTPUT" ] ; then
 			get_output
+		elif [ "$MENU" = "ARCHIVE COMMENT" ] ; then
+			get_comment
 		elif [ "$MENU" = "ADVANCED" ] ; then
 			get_advanced
 		elif [ "$MENU" = "RUN COMMAND" ] ; then
