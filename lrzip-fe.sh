@@ -613,7 +613,8 @@ get_verbosity()
 		"v|--verbose" "Verbose" "$tVERBOSE" "Show $LRZ settings and progress prior to compression/decompression" \
 		"vv|--verbose --verbose" "Maximum Verbosity" "$tMAXVERBOSE" "Show compression/decompression/extra info on $LRZ execugtion in addition to -v option" \
 		"P|--progress" "Show Progress" "$tPROGRESS" "Only show progress, no other verbose options on compression/decompression" \
-		"q|--quiet" "Silent. Show no progress" "$tQUIET" "Be quiet and show nothing on compression/decompression" \
+		"q|--quiet" "Silent. Show no progress" "$tQUIET" "Be quiet and do not show progress on compression/decompression" \
+		"Q|--very-quiet" "No Output. Suppress all  output" "$tVQUIET" "Be quiet and show no output on compression/decompression" \
 		2>/tmp/lverbosity.dia
 	check_error
 	return_sl_option "/tmp/lverbosity.dia"
@@ -623,6 +624,7 @@ get_verbosity()
 	tMAXVERBOSE="off"
 	tPROGRESS="off"
 	tQUIET="off"
+	tVQUIET="off"
 
 	if [ "$VERBOSITY" = "--verbose" -o $VERBOSITY = "v" ] ; then
 		tVERBOSE="on"
@@ -632,6 +634,8 @@ get_verbosity()
 		tPROGRESS="on"
 	elif [ "$VERBOSITY" = "--quiet" -o $VERBOSITY = "q" ] ; then
 		tQUIET="on"
+	elif [ "$VERBOSITY" = "--very-quiet" -o $VERBOSITY = "Q" ] ; then
+		tVQUIET="on"
 	fi
 
 }
@@ -783,14 +787,14 @@ fillcommandline()
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
 		[ ! -z "$COMMENT" ]	&& TCOMMANDLINE="$TCOMMANDLINE $COMMENT"
-		[ "$VERBOSITY" = "--progress" ] && TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
+		[ ! -z "$VERBOSITY" ]	&& TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
 		TARCOMMANDLINE="$TARCOMMANDLINE -I '$LRZ "
 		if [ ! -z "$METHOD" ] ; then
 			TCOMMANDLINE="$TCOMMANDLINE-$METHOD"
 			let firsttime=1
 		fi
-		if [ "$VERBOSITY" = "P" ] ; then
+		if [ ! -z "$VERBOSITY" ] ; then
 			if [ $firsttime -eq 1 ] ; then
 				TCOMMANDLINE="$TCOMMANDLINE$VERBOSITY"
 			else
@@ -955,6 +959,7 @@ clear_vars()
 	tMAXVERBOSE="off"
 	tPROGRESS="off"
 	tQUIET="off"
+	tVQUIET="off"
 	tFORCE="off"
 	tDELETE="off"
 	tKEEP="off"
