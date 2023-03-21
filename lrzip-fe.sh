@@ -508,6 +508,7 @@ get_method()
 		"l|--lzo" "lzo" "$tLZO" "LZO Compression" \
 		"n|--rzip" "rzip" "$tRZIP" "Do NOT Compress. Just pre-process using RZIP (Fastest)." \
 		"z|--zpaq" "zpaq" "$tZPAQ" "Use ZPAQ Compression (Slowest)." \
+		"Z|--zstd" "zstd" "$tZSTD" "Use ZSTD Compression (Slowest)." \
 		2>/tmp/lmethod.dia
 	check_error
 	return_sl_option "/tmp/lmethod.dia"
@@ -520,6 +521,7 @@ get_method()
 	tLZO="off"
 	tRZIP="off"
 	tZPAQ="off"
+	tZSTD="off"
 
 	if [ $METHOD = "--lzma" -o x$METHOD = "x" ] ; then
 		tLZMA="on"
@@ -535,6 +537,8 @@ get_method()
 		tRZIP="on"
 	elif [ $METHOD = "--zpaq" -o $METHOD = "z" ] ; then
 		tZPAQ="on"
+	elif [ $METHOD = "--zstd" -o $METHOD = "Z" ] ; then
+		tZSTD="on"
 	fi
 
 }
@@ -929,6 +933,7 @@ clear_vars()
 	tLZO="off"
 	tRZIP="off"
 	tZPAQ="off"
+	tZSTD="off"
 	tLEVEL1="off"
 	tLEVEL2="off"
 	tLEVEL3="off"
