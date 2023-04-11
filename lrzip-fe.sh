@@ -7,8 +7,7 @@
 # no warranties, restrictions
 # just attribution appreciated
 
-# Third release version
-VERSION=0.30
+VERSION=0.61
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -107,8 +106,11 @@ return_sl_option()
 {
 	# default to long
 	local SL_FIELD=2
-	# if 0 length file or non-existent
-	[ ! -s "$1" -o ! -e "$1" ] && return -1
+	# clear RETURN_VAL
+	RETURN_VAL=
+
+	# if 0 length file or non-existent return with no value set
+	[ ! -s "$1" -o ! -e "$1" ] && return
 	[ "$SHORTLONG" = "SHORT" ] && SL_FIELD=1
 
 	RETURN_VAL=$(cat "$1" | cut -f $SL_FIELD -d'|')
