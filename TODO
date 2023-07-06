@@ -1,5 +1,3 @@
-Allow setting of LZMA Dictionary size and ZPAQ Block Sizes
-
 Set Prompting for Encrypt options. Insecure, but can use *** input
 
 Add lrzip execution (done)

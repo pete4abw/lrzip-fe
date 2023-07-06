@@ -1,0 +1,13 @@
+lrzip-fe: Install suggestions
+
+* either lrzip or lrzip-next must be in path.
+  if both exist, lrzip-next will be used.
+* lrzip-fe.sh can be run from any directory or put
+  in /usr/bin or /yusr/local/bin
+* if colors are unreadable for any reason, use
+  the enclosed dialog.rc file by copying it to
+  $HOME/.dialog.rc
+
+Peter Hyman
+July 2023
+pete@peterhyman.com
