@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
-# lrzip dialog front end
-# based on lrzip 0.9x+
+# lrzip-next dialog front end
+# based on lrzip-next 0.6.x+
 # Peter Hyman, pete@peterhyman.com
 # Placed in the public domain
 # no warranties, restrictions
 # just attribution appreciated
 
-VERSION=0.61
+VERSION=0.62
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -260,7 +260,7 @@ get_advanced()
 change_dir()
 {
 	local CHGDIR
-	CHDIR=$(dialog --backtitle "Current Directory is: $PWD" \
+	CHDIR=$(dialog --colors --backtitle "Current Directory is: $PWD" \
 		--title "$PROG: Set Directory" \
 		--output-fd 1 \
 		--dselect "$CHDIR" 20 50 )
@@ -344,7 +344,7 @@ get_filter()
 		"--armt" "armt" "$tARMT" "Use armt code pre-compression filter" \
 		"--ppc" "ppc" "$tPPC" "Use ppc code pre-compression filter" \
 		"--sparc" "sparc" "$tSPARC" "Use sparc code pre-compression filter" \
-		"--ia64" "ia64" "$tia64" "Use ia64 code pre-compression filter" \
+		"--ia64" "ia64" "$tIA64" "Use ia64 code pre-compression filter" \
 		"--delta=" "delta" "$tDELTA" "Use delta code pre-compression filter. Delta offset value to be input next." \
 		2>/tmp/lfilter.dia
 	check_error
@@ -354,7 +354,7 @@ get_filter()
 	tARMT="off"
 	tPPC="off"
 	tSPARC="off"
-	tia64="off"
+	tIA64="off"
 	tDELTA="off"
 
 	# clear Delta values if not selected
@@ -373,7 +373,7 @@ get_filter()
 	elif [ $FILTER = "--sparc" ] ; then
 		tSPARC="on"
 	elif [ $FILTER = "--ia64" ] ; then
-		tia64="on"
+		tIA64="on"
 	elif [ $FILTER = "--delta=" ] ; then
 		tDELTA="on"
 		# set Delta offset and remember it in tDELTAVAL
@@ -874,7 +874,7 @@ fillcommandline()
 	TARCOMMANDLINE="$TARCOMMANDLINE""f $TFILENAME"
 
 	# set BCOMMANDLINE for BackTitle with inverted colors for tar
-	BCOMMANDLINE="$COMMANDLINE | \Zr$TARCOMMANDLINE\ZR"
+	BCOMMANDLINE="\Z7$COMMANDLINE | \Zr$TARCOMMANDLINE\Zn"
 }
 
 run_lrzip()
@@ -959,7 +959,7 @@ clear_vars()
 	tARMT="off"
 	tPPC="off"
 	tSPARC="off"
-	tia64="off"
+	tIA64="off"
 	tDELTA="off"
 	tDELTAVAL=1
 	tVERBOSE="off"
@@ -1005,7 +1005,8 @@ else
 	LOCALSL="LONG"
 fi
 
-dialog	--backtitle "Current Directory is: $PWD" \
+dialog	--colors \
+	--backtitle "\Z7Current Directory is: $PWD\Zn" \
 	--title "Welcome to $PROG - Version: $VERSION" \
 	--no-tags \
 	--extra-button --extra-label "Toggle $LOCALSL Commands" \
