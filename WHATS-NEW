@@ -1,7 +1,12 @@
+July 2023
+  Provide a dialog.rc file to allow user more flexibility
+  in choosing colors or to make certain elements (like
+  backtitle) more readable. This dialog.rc file is from
+  Slackware which does not use highlights as a default.
+
 January 2023
   Add Archive Comment option
 
 December 2022
-
   Add Hash and Encryption choices
   Add bzip3
