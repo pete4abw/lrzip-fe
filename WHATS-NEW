@@ -1,4 +1,5 @@
 July 2023
+  Add ARM64 filter option
   Provide a dialog.rc file to allow user more flexibility
   in choosing colors or to make certain elements (like
   backtitle) more readable. This dialog.rc file is from

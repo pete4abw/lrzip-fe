@@ -7,7 +7,7 @@
 # no warranties, restrictions
 # just attribution appreciated
 
-VERSION=0.62
+VERSION=0.70
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -342,6 +342,7 @@ get_filter()
 		"--x86" "x86" "$tx86" "Use x86 code pre-compression filter" \
 		"--arm" "arm" "$tARM" "Use arm code pre-compression filter" \
 		"--armt" "armt" "$tARMT" "Use armt code pre-compression filter" \
+		"--arm64" "arm64" "$tARMT" "Use arm64 code pre-compression filter" \
 		"--ppc" "ppc" "$tPPC" "Use ppc code pre-compression filter" \
 		"--sparc" "sparc" "$tSPARC" "Use sparc code pre-compression filter" \
 		"--ia64" "ia64" "$tIA64" "Use ia64 code pre-compression filter" \
@@ -352,6 +353,7 @@ get_filter()
 	tx86="off"
 	tARM="off"
 	tARMT="off"
+	tARM64="off"
 	tPPC="off"
 	tSPARC="off"
 	tIA64="off"
@@ -368,6 +370,8 @@ get_filter()
 		tARM="on"
 	elif [ $FILTER = "--armt" ] ; then
 		tARMT="on"
+	elif [ $FILTER = "--arm64" ] ; then
+		tARM64="on"
 	elif [ $FILTER = "--ppc" ] ; then
 		tPPC="on"
 	elif [ $FILTER = "--sparc" ] ; then
@@ -957,6 +961,7 @@ clear_vars()
 	tx86="off"
 	tARM="off"
 	tARMT="off"
+	tARM64="off"
 	tPPC="off"
 	tSPARC="off"
 	tIA64="off"
