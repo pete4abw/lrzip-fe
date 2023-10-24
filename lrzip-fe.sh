@@ -7,7 +7,7 @@
 # no warranties, restrictions
 # just attribution appreciated
 
-VERSION=0.70
+VERSION=0.80
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -161,17 +161,18 @@ get_advanced()
 		--form \
 		"Expert Options\nAdvanced Users Only\nDefault Values used if blank" \
 		0 0 0 \
-		"                    Show Hash (Y/N): "  1 1 "$tHASH "         1 39 2 2 "Show Hash Integrity Information (N)" \
-		"                 Hash Method (1-13): "  2 1 "$tHASHMETHOD "   2 39 2 4 "1=MD5, 2=RIPEMD, 3=SHA256, 4=SHA384, 5=SHA512, 6=SHA3_256, 7=SHA3_512, 8=SHAKE128_16, 9=SHAKE128_32, 10=SHAKE128_64, 11=SHAKE256_16, 12=SHAKE256_32, 13=SHAKE256_64" \
-		"             Number of Threads (##): "  3 1 "$tTHREADS "      3 39 6 4 "Set processor count to override number of threads" \
-		"    Disable Threshold Testing (Y/N): "  4 1 "$tTHRESHOLD "    4 39 6 4 "Disable LZ4 Compressibility Testing (N)" \
-		"           Threshold Percent (1-99): "  5 1 "$tTHRESHOLDPCT " 5 39 6 4 "Chunk Compressibility Percent (100)" \
-		"                   Nice Value (###): "  6 1 "$tNICE "         6 39 6 4 "Set Nice to value ### (19)" \
-		"         Maximum Ram x 100Mb (####): "  7 1 "$tMAXRAM "       7 39 6 5 "Override detected system ram to ### (in 100s of MB)" \
-		"  Memory Window Size x 100Mb (####): "  8 1 "$tWINDOW "       8 39 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
-		"  Unlimited Ram Use (CAREFUL) (Y/N): "  9 1 "$tUNLIMITED "    9 39 6 4 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
-		"                      Encrypt (Y/N): " 10 1 "$tENCRYPT "     10 39 6 4 "Prompt for a Password to protect $LRZ file" \
-		"            Encryption Method (1-2): " 11 1 "$tEMETHOD "     11 39 6 4 "Password Method: 1 = AES-128 (default), 2= AES-256"\
+		"                      Show Hash (Y/N): "  1 1 "$tHASH "         1 41 2 2 "Show Hash Integrity Information (N)" \
+		"                   Hash Method (1-13): "  2 1 "$tHASHMETHOD "   2 41 2 4 "1=MD5, 2=RIPEMD, 3=SHA256, 4=SHA384, 5=SHA512, 6=SHA3_256, 7=SHA3_512, 8=SHAKE128_16, 9=SHAKE128_32, 10=SHAKE128_64, 11=SHAKE256_16, 12=SHAKE256_32, 13=SHAKE256_64" \
+		"               Number of Threads (##): "  3 1 "$tTHREADS "      3 41 6 4 "Set processor count to override number of threads" \
+		"Inhibit Backend Multi Threading (Y/N): "  4 1 "$tNOBEMT "       4 41 2 2 "Inhibit backend processor using multiple threads (lzma only)" \
+		"      Disable Threshold Testing (Y/N): "  5 1 "$tTHRESHOLD "    5 41 2 2 "Disable LZ4 Compressibility Testing (N)" \
+		"             Threshold Percent (1-99): "  6 1 "$tTHRESHOLDPCT " 6 41 6 4 "Chunk Compressibility Percent (100)" \
+		"                     Nice Value (###): "  7 1 "$tNICE "         7 41 6 4 "Set Nice to value ### (19)" \
+		"           Maximum Ram x 100Mb (####): "  8 1 "$tMAXRAM "       8 41 6 5 "Override detected system ram to ### (in 100s of MB)" \
+		"    Memory Window Size x 100Mb (####): "  9 1 "$tWINDOW "       9 41 6 5 "Override heuristically detected compression window size (in 100s of MB)" \
+		"    Unlimited Ram Use (CAREFUL) (Y/N): " 10 1 "$tUNLIMITED "   10 41 2 2 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
+		"                        Encrypt (Y/N): " 11 1 "$tENCRYPT "     11 41 2 2 "Prompt for a Password to protect $LRZ file" \
+		"              Encryption Method (1-2): " 12 1 "$tEMETHOD "     12 41 6 4 "Password Method: 1 = AES-128 (default), 2= AES-256"\
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator local. No need to revert later.
@@ -186,67 +187,97 @@ get_advanced()
 				if [ "$tHASH" = "Y" -o "$tHASH" = "y" ] ; then
 					return_sl_option_value "H" "--hash"
 					HASH="$RETURN_VAL"
+				else
+					HASH=
 				fi
 				;;
 			2) tHASHMETHOD=$TMPVAR
 				if [ ${#tHASHMETHOD} -gt 0 ] ; then
 					return_sl_option_value "H$tHASHMETHOD" "--hash=$tHASHMETHOD"
 					HASH=$RETURN_VAL
+				else
+					HASH=
 				fi
 				;;
 			3) tTHREADS=$TMPVAR
 				if [ ${#tTHREADS} -gt 0 ] ; then
 					return_sl_option_value "p $tTHREADS" "--threads=$tTHREADS"
 					THREADS="$RETURN_VAL"
+				else
+					THREADS=
 				fi
 				;;
-			4) tTHRESHOLD=$TMPVAR
+			4) tNOBEMT=$TMPVAR
+				if [ "$tNOBEMT" = "Y" -o "$tNOBEMT" = "y" ] ; then
+					# nobemt only has a long option with no parameters
+					NOBEMT="--nobemt"
+				else
+					NOBEMT=
+				fi
+				;;
+			5) tTHRESHOLD=$TMPVAR
 				if [ "$tTHRESHOLD" = "Y" -o "$tTHRESHOLD" = "y" ] ; then
 					return_sl_option_value "T" "--threshold"
 					THRESHOLD="$RETURN_VAL"
+				else
+					THRESHOLD=
 				fi
 				;;
-			5) tTHRESHOLDPCT=$TMPVAR
+			6) tTHRESHOLDPCT=$TMPVAR
 				# Threshold Percent can't have a space since it's an optional value
 				if [ ${tTHRESHOLDPCT} -ge 1 -a ${tTHRESHOLDPCT} -le 100 ] ; then
 					return_sl_option_value "T$tTHRESHOLDPCT" "--threshold=$tTHRESHOLDPCT"
 					THRESHOLDPCT="$RETURN_VAL"
+				else
+					THRESHOLDPCT=
 				fi
 				;;
-			6) tNICE=$TMPVAR
+			7) tNICE=$TMPVAR
 				if [ ${#tNICE} -gt 0 ] ; then
 					return_sl_option_value "N $tNICE" "--nice-level=$tNICE"
 					NICE="$RETURN_VAL"
+				else
+					NICE=
 				fi
 				;;
-			7) tMAXRAM=$TMPVAR
+			8) tMAXRAM=$TMPVAR
 				if [ ${#tMAXRAM} -gt 0 ] ; then
 					return_sl_option_value "m $tMAXRAM" "--maxram=$tMAXRAM"
 					MAXRAM="$RETURN_VAL"
+				else
+					MAXRAM=
 				fi
 				;;
-			8) tWINDOW=$TMPVAR
+			9) tWINDOW=$TMPVAR
 				if [ ${#tWINDOW} -gt 0 ] ; then
 					return_sl_option_value "w $tWINDOW" "--window=$tWINDOW"
 					WINDOW="$RETURN_VAL"
+				else
+					WINDOW=
 				fi
 				;;
-			9) tUNLIMITED=$TMPVAR
+			10) tUNLIMITED=$TMPVAR
 				if [ "$tUNLIMITED" = "Y" -o "$tUNLIMITED" = "y" ] ; then
 					return_sl_option_value "U" "--unlimited"
 					UNLIMITED="$RETURN_VAL"
+				else
+					UNLIMITED=
 				fi
 				;;
-			10) tENCRYPT=$TMPVAR
+			11) tENCRYPT=$TMPVAR
 				if [ "$tENCRYPT" = "Y" -o "$tENCRYPT" = "y" ] ; then
 					return_sl_option_value "e" "--encrypt"
 					ENCRYPT="$RETURN_VAL"
+				else
+					ENCRYPT=
 				fi
 				;;
-			11) tEMETHOD=$TMPVAR
+			12) tEMETHOD=$TMPVAR
 				if [ ${#tEMETHOD} -gt 0 ] ; then
 					return_sl_option_value "E $tEMETHOD" "--emethod=$tEMETHOD"
 					EMETHOD=$RETURN_VAL
+				else
+					EMETHOD=
 				fi
 				;;
 			*)
@@ -650,7 +681,6 @@ get_verbosity()
 
 }
 
-
 fillcommandline()
 {
 	COMMANDLINE="$LRZ"
@@ -669,6 +699,7 @@ fillcommandline()
 		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE $SUFFIX"
 		[ ! -z $HASH ]		&& COMMANDLINE="$COMMANDLINE $HASH"
 		[ ! -z $THREADS ]	&& COMMANDLINE="$COMMANDLINE $THREADS"
+		[ ! -z $NOBEMT ]	&& COMMANDLINE="$COMMANDLINE $NOBEMT"
 		[ ! -z $THRESHOLD ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLD"
 		[ ! -z $THRESHOLDPCT ]	&& COMMANDLINE="$COMMANDLINE $THRESHOLDPCT"
 		[ ! -z $NICE ]		&& COMMANDLINE="$COMMANDLINE $NICE"
@@ -758,6 +789,7 @@ fillcommandline()
 		[ ! -z "$OUTNAME" ]	&& COMMANDLINE="$COMMANDLINE -$OUTNAME"
 		[ ! -z "$SUFFIX" ]	&& COMMANDLINE="$COMMANDLINE -$SUFFIX"
 		[ ! -z "$THREADS" ]	&& COMMANDLINE="$COMMANDLINE -$THREADS"
+		[ ! -z "$NOBEMT" ]	&& COMMANDLINE="$COMMANDLINE $NOBEMT"
 		[ ! -z "$NICE" ]	&& COMMANDLINE="$COMMANDLINE -$NICE"
 		[ ! -z "$MAXRAM" ]	&& COMMANDLINE="$COMMANDLINE -$MAXRAM"
 		[ ! -z "$WINDOW" ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
@@ -821,6 +853,7 @@ fillcommandline()
 
 		[ ! -z "$LEVEL" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$LEVEL"
 		[ ! -z "$RZIPLEVEL" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$RZIPLEVEL"
+		[ ! -z "$NOBEMT" ]		&& TCOMMANDLINE="$TCOMMANDLINE $NOBEMT"
 		[ ! -z "$THRESHOLDPCT" ]	&& TCOMMANDLINE="$TCOMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILTER" ]		&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
 		[ ! -z "$DELTA" ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
@@ -915,6 +948,7 @@ clear_vars()
 	FILE=
 	HASH=
 	THREADS=
+	NOBEMT=
 	THRESHOLD=
 	THRESHOLDPCT=
 	NICE=
@@ -980,6 +1014,7 @@ clear_vars()
 	tSUFFIX=
 	tHASH=
 	tTHREADS=
+	tNOBEMT=
 	tTHRESHOLD=
 	tTHRESHOLDPCT=
 	tNICE=
@@ -995,8 +1030,9 @@ clear_vars()
 
 
 # set some globals
+# Default to short command line
 RETCODE=$DIALOG_EXTRA
-SHORTLONG="LONG"
+SHORTLONG="SHORT"
 
 while [ $RETCODE -eq $DIALOG_EXTRA ]
 do
