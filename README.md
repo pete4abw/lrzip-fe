@@ -31,7 +31,7 @@ under the hood.
 
 ## Thus, lrzip-fe
 
-Version 0.9x of **lrzip-next** has 46 options. Some are mutually
+Version 0.12x of **lrzip-next** has 52 options. Some are mutually
 exclusive, (such as `-O and -o`), other can be combined, but only
 in some modes. (see file `lrzip.options.txt`)
 
@@ -117,7 +117,7 @@ Andrew Tridgell **rzip**
 Your comments and contributions are welcome.
 
 October 2020  
-December 2022  
+October 2023  
 Peter Hyman, pete@peterhyman.com  
 https://github.com/pete4abw/lrzip-fe  
 https://github.com/pete4abw/lrzip-next  

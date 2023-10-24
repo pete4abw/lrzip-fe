@@ -1,4 +1,9 @@
-July 2023
+October 2023	lrzip-fe v0.80
+  Add --nobemt Advanced Option.
+  --nobemt will inhibit backend multi-threading.
+  Only effective with lzma.
+
+July 2023	lrzip-fe v0.70
   Add ARM64 filter option
   Provide a dialog.rc file to allow user more flexibility
   in choosing colors or to make certain elements (like
