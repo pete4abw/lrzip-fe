@@ -1,3 +1,6 @@
+June 2024	lrzip-fe v0.90
+  Add --riscv filter option for RISC-V (sdk 24.07).
+
 October 2023	lrzip-fe v0.80
   Add --nobemt Advanced Option.
   --nobemt will inhibit backend multi-threading.
