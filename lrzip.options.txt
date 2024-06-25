@@ -1,6 +1,6 @@
-lrzip-next version 0.12.2
+lrzip-next version 0.13.0
 Copyright (C) Con Kolivas 2006-2021
-Copyright (C) Peter Hyman 2007-2022
+Copyright (C) Peter Hyman 2007-2024
 Based on rzip Copyright (C) Andrew Tridgell 1998-2003
 
 Usage: lrzip-next [options] <file...>
@@ -30,6 +30,7 @@ Compression Options:
 	--ppc			Use PPC filter (for all compression modes)
 	--sparc			Use SPARC filter (for all compression modes)
 	--ia64			Use IA64 filter (for all compression modes)
+	--riscv			Use RISC-V filter (for all compression modes)
 	--delta	[1..31]		Use Delta filter (for all compression modes) (1 (default) - 15, then multiples of 16 to 256)
     Additional Compression Options:
 	-C, --comment [comment]	Add a comment up to 64 chars

@@ -377,6 +377,7 @@ get_filter()
 		"--ppc" "ppc" "$tPPC" "Use ppc code pre-compression filter" \
 		"--sparc" "sparc" "$tSPARC" "Use sparc code pre-compression filter" \
 		"--ia64" "ia64" "$tIA64" "Use ia64 code pre-compression filter" \
+		"--riscv" "riscv" "$tRISCV" "Use RISC-V code pre-compression filter" \
 		"--delta=" "delta" "$tDELTA" "Use delta code pre-compression filter. Delta offset value to be input next." \
 		2>/tmp/lfilter.dia
 	check_error
@@ -388,6 +389,7 @@ get_filter()
 	tPPC="off"
 	tSPARC="off"
 	tIA64="off"
+	tRISCV="off"
 	tDELTA="off"
 
 	# clear Delta values if not selected
@@ -409,6 +411,8 @@ get_filter()
 		tSPARC="on"
 	elif [ $FILTER = "--ia64" ] ; then
 		tIA64="on"
+	elif [ $FILTER = "--riscv" ] ; then
+		tRISCV="on"
 	elif [ $FILTER = "--delta=" ] ; then
 		tDELTA="on"
 		# set Delta offset and remember it in tDELTAVAL
@@ -999,6 +1003,7 @@ clear_vars()
 	tPPC="off"
 	tSPARC="off"
 	tIA64="off"
+	tRISCV="off"
 	tDELTA="off"
 	tDELTAVAL=1
 	tVERBOSE="off"
