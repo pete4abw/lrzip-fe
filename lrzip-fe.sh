@@ -7,7 +7,7 @@
 # no warranties, restrictions
 # just attribution appreciated
 
-VERSION=0.80
+VERSION=0.91
 
 # is lrzip even here?
 for i in lrzip-next lrzip
@@ -173,6 +173,7 @@ get_advanced()
 		"    Unlimited Ram Use (CAREFUL) (Y/N): " 10 1 "$tUNLIMITED "   10 41 2 2 "Use Unlimited window size beyond ram size. MUCH SLOWER" \
 		"                        Encrypt (Y/N): " 11 1 "$tENCRYPT "     11 41 2 2 "Prompt for a Password to protect $LRZ file" \
 		"              Encryption Method (1-2): " 12 1 "$tEMETHOD "     12 41 6 4 "Password Method: 1 = AES-128 (default), 2= AES-256"\
+		"CostFactor for Key Derivation (10-40): " 13 1 "$tCOSTFACTOR "  13 41 6 5 "Override computed Cost Factor 2^N (10-40)"\
 		2>/tmp/ladvanced.dia
 	check_error
 # make newline field separator local. No need to revert later.
@@ -280,6 +281,14 @@ get_advanced()
 					EMETHOD=
 				fi
 				;;
+			13) tCOSTFACTOR=$TMPVAR
+				# There is no short version for Costfactor
+				if [ ${#tCOSTFACTOR} -gt 0 ] ; then
+					COSTFACTOR="--costfactor $tCOSTFACTOR"
+				else
+					COSTFACTIR=
+				fi
+				;;
 			*)
 				break
 				;;
@@ -378,7 +387,7 @@ get_filter()
 		"--sparc" "sparc" "$tSPARC" "Use sparc code pre-compression filter" \
 		"--ia64" "ia64" "$tIA64" "Use ia64 code pre-compression filter" \
 		"--riscv" "riscv" "$tRISCV" "Use RISC-V code pre-compression filter" \
-		"--delta=" "delta" "$tDELTA" "Use delta code pre-compression filter. Delta offset value to be input next." \
+		"--delta" "delta" "$tDELTA" "Use delta code pre-compression filter. Delta offset value to be input next." \
 		2>/tmp/lfilter.dia
 	check_error
 	FILTER=$(cat /tmp/lfilter.dia)
@@ -393,7 +402,7 @@ get_filter()
 	tDELTA="off"
 
 	# clear Delta values if not selected
-	if [ $FILTER != "--delta=" ] ; then
+	if [ $FILTER != "--delta" ] ; then
 		DELTA=
 		tDELTAVAL=1
 	fi
@@ -413,12 +422,12 @@ get_filter()
 		tIA64="on"
 	elif [ $FILTER = "--riscv" ] ; then
 		tRISCV="on"
-	elif [ $FILTER = "--delta=" ] ; then
+	elif [ $FILTER = "--delta" ] ; then
 		tDELTA="on"
 		# set Delta offset and remember it in tDELTAVAL
 		dialog --clear \
 			--title "Delta Value" \
-			--inputbox "Enter Delta Filter Offset Value:" 0 41 "$tDELTAVAL" \
+			--inputbox "Enter Delta Filter Offset Value (1-31):" 0 41 "$tDELTAVAL" \
 			2>/tmp/ldelta.dia
 		check_error
 		DELTA=$(</tmp/ldelta.dia)
@@ -713,7 +722,8 @@ fillcommandline()
 		[ ! -z $ENCRYPT ]	&& COMMANDLINE="$COMMANDLINE $ENCRYPT"
 		[ ! -z $EMETHOD ]	&& COMMANDLINE="$COMMANDLINE $EMETHOD"
 		[ ! -z $FILTER ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
-		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z $DELTA ]		&& COMMANDLINE="$COMMANDLINE $DELTA"
+		[ ! -z $COSTFACTOR ]	&& COMMANDLINE="$COMMANDLINE $COSTFACTOR"
 		[ ! -z "$COMMENT" ]	&& COMMANDLINE="$COMMANDLINE $COMMENT"
 		[ ! -z $FILE ]		&& COMMANDLINE="$COMMANDLINE $FILE"
 	else
@@ -799,9 +809,10 @@ fillcommandline()
 		[ ! -z "$WINDOW" ]	&& COMMANDLINE="$COMMANDLINE -$WINDOW"
 		[ ! -z "$THRESHOLDPCT" ] && COMMANDLINE="$COMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILTER" ]	&& COMMANDLINE="$COMMANDLINE $FILTER"
-		[ ! -z "$DELTA" ]	&& COMMANDLINE="$COMMANDLINE$DELTA"
+		[ ! -z "$DELTA" ]	&& COMMANDLINE="$COMMANDLINE $DELTA"
 		[ ! -z "$HASH" ]	&& COMMANDLINE="$COMMANDLINE -$HASH"
 		[ ! -z "$EMETHOD" ]	&& COMMANDLINE="$COMMANDLINE -$EMETHOD"
+		[ ! -z "$COSTFACTOR" ]	&& COMMANDLINE="$COMMANDLINE $COSTFACTOR"
 		[ ! -z "$COMMENT" ]	&& COMMANDLINE="$COMMANDLINE -$COMMENT"
 		[ ! -z "$FILE" ]	&& COMMANDLINE="$COMMANDLINE $FILE"
 	fi
@@ -831,7 +842,7 @@ fillcommandline()
 		[ ! -z $THRESHOLD ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLD"
 		[ ! -z $THRESHOLDPCT ]	&& TCOMMANDLINE="$TCOMMANDLINE $THRESHOLDPCT"
 		[ ! -z $FILTER ]	&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
-		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z $DELTA ]		&& TCOMMANDLINE="$TCOMMANDLINE $DELTA"
 		[ ! -z "$COMMENT" ]	&& TCOMMANDLINE="$TCOMMANDLINE $COMMENT"
 		[ ! -z "$VERBOSITY" ]	&& TCOMMANDLINE="$TCOMMANDLINE $VERBOSITY"
 	else
@@ -860,7 +871,7 @@ fillcommandline()
 		[ ! -z "$NOBEMT" ]		&& TCOMMANDLINE="$TCOMMANDLINE $NOBEMT"
 		[ ! -z "$THRESHOLDPCT" ]	&& TCOMMANDLINE="$TCOMMANDLINE -$THRESHOLDPCT"
 		[ ! -z "$FILTER" ]		&& TCOMMANDLINE="$TCOMMANDLINE $FILTER"
-		[ ! -z "$DELTA" ]		&& TCOMMANDLINE="$TCOMMANDLINE$DELTA"
+		[ ! -z "$DELTA" ]		&& TCOMMANDLINE="$TCOMMANDLINE $DELTA"
 		[ ! -z "$COMMENT" ]		&& TCOMMANDLINE="$TCOMMANDLINE -$COMMENT"
 	fi
 	TARCOMMANDLINE="$TARCOMMANDLINE$TCOMMANDLINE'"
@@ -961,6 +972,7 @@ clear_vars()
 	UNLIITED=
 	ENCRYPT=
 	EMETHOD=
+	COSTFACTOR=
 	COMMENT=
 	RETURN_VAL=
 	COMMANDLINE=
@@ -1028,6 +1040,7 @@ clear_vars()
 	tUNLIMITED=
 	tENCRYPT=
 	tEMETHOD=
+	tCOSTFACTOR=
 	tCOMMENT=
 }
 
